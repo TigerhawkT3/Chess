@@ -485,7 +485,9 @@ class Chess(object):
         last_target (string): a string representation of the last-moved piece's
             current location
         dragged_piece (int): an int representation of the PhotoImage to be
-            dragged around in click-drag mode.
+            dragged around in click-drag mode
+        autosave (boolean): True if the file to be saved or loaded is the
+            autosave, False otherwise
     """
     def __init__(self, parent):
 
@@ -554,7 +556,7 @@ class Chess(object):
 
         # Game instructions.
         self.instructions = Label(self.frame, \
-        text="Ctrl + ... (S)ave | (L)oad | " + \
+        text="Ctrl + ... (S)ave | (L)oad | (Z)Undo\n" + \
         "(E)asy manual AI move | (H)ard manual AI move")
         self.instructions.grid(row=6, column = 0, columnspan = 3)
 
@@ -597,6 +599,8 @@ class Chess(object):
         "white_knight":self.white_knight_gif,
         "white_pawn":self.white_pawn_gif,
         "transparent_square":self.transparent_square_gif}
+
+        self.autosave = False
 
         # Draws the board, which involves reinitialization of match-specific
         # variables.
@@ -749,10 +753,12 @@ class Chess(object):
         self.parent.bind("<Control-h>", self.hard_step)
         self.parent.bind("<Control-s>", self.save)
         self.parent.bind("<Control-l>", self.load)
+        self.parent.bind("<Control-z>", self.undo)
         self.parent.bind("<Control-E>", self.easy_step)
         self.parent.bind("<Control-H>", self.hard_step)
         self.parent.bind("<Control-S>", self.save)
         self.parent.bind("<Control-L>", self.load)
+        self.parent.bind("<Control-Z>", self.undo)
 
         # Set a status message.
         self.status_message.config(text = "Welcome to Chess!")
@@ -860,10 +866,14 @@ class Chess(object):
 
         savelist.append(self.mode)
 
-        filename = self.text_box.get() + ".txt"
-        if filename == ".txt":
-            filename = "savechess.txt"
-            self.text_box.insert(0, "savechess")
+        if self.autosave:
+            filename = "tempchess.txt"
+        else:
+            filename = self.text_box.get() + ".txt"
+            if filename == ".txt":
+                filename = "savechess.txt"
+                self.text_box.insert(0, "savechess")
+
         try:
             with open(filename, 'w', encoding = 'utf-8-sig') as output:
                 for item in savelist:
@@ -871,8 +881,9 @@ class Chess(object):
         except:
             self.status_message.config(text = "Error saving file.")
         else:
-            self.status_message.config(text = "File saved as " + filename + \
-            ".")
+            if not self.autosave:
+                self.status_message.config(text = "File saved as " + \
+                filename + ".")
 
     def load(self, event):
         """
@@ -883,10 +894,15 @@ class Chess(object):
         included.
         """
         savelist = []
-        filename = self.text_box.get() + ".txt"
-        if filename == ".txt":
-            filename = "savechess.txt"
-            self.text_box.insert(0, "savechess")
+
+        if self.autosave:
+            filename = "tempchess.txt"
+        else:
+            filename = self.text_box.get() + ".txt"
+            if filename == ".txt":
+                filename = "savechess.txt"
+                self.text_box.insert(0, "savechess")
+
         try:
             with open(filename, 'r', encoding = 'utf-8-sig') as file:
                 for line in file:
@@ -986,6 +1002,27 @@ class Chess(object):
 
         self.check_castles()
         self.refresh_images()
+
+    def undo(self, event):
+        """
+        Undoes the last human move (plus an AI move, if relevant) by loading the
+        temporary save file. If there's no temporary save file, a generic
+        loading error message is displayed. If a new game was just started or
+        loaded and no one has moved yet, undo will go back to the previous
+        game. Undo can be used even after someone has won. Undo serves as a
+        sort of crash protection, as it saves the entire game state every time
+        someone moves - just start the program up and hit undo.
+        """
+        self.autosave = True
+        self.load(event)
+        self.autosave = False
+
+        if self.player is self.black_player:
+            player = "Black"
+        else:
+            player = "White"
+        self.status_message.config(text = "Move undone. " + \
+            player + "'s turn.")
 
     def check_castles(self):
         """
@@ -1452,6 +1489,9 @@ class Chess(object):
             self.board.itemconfig(self.squares[int(self.last_target[0])]
                 [int(self.last_target[1])], fill=color+"green")
         if click in self.chosen_piece.moveset:
+            self.autosave = True
+            self.save(0)
+            self.autosave = False
             self.move(self.chosen_piece, click)
             if self.mode == "easy" and self.black_king.location != "88":
                 self.easy_move()
