@@ -384,6 +384,10 @@ class Chess(object):
             "human" for 2P matches
         status_message (Label): a tkinter Label that displays the appropriate
             message when a player wins
+        text_box (Entry): a tkinter Entry box for the user to enter a file name
+        txt_label (Label): a tkinter Label that just says '.txt'
+        instructions (Label): a tkinter Label with the hotkeys
+        instructions (Label): a tkinter Label that provides basic instructions
         white_player (Player): a Player object, using the white pieces
         black_player (Player): a Player object, using the black pieces
         black_king_gif (PhotoImage): a PhotoImage object containing a GIF of
@@ -531,6 +535,28 @@ class Chess(object):
         # Status message. When the game ends, the result is described here.
         self.status_message = Label(self.frame, text = "")
         self.status_message.grid(row=4, column = 0, columnspan=3)
+
+        # Filename box explanation
+        self.name_here = Label(self.frame, text = "Filename for load/save: ")
+        self.name_here.grid(row=5, column=0, sticky="E")
+
+        # Text box for entering a file name
+        self.text_box = Entry(self.frame, width=32, justify=RIGHT)
+        self.text_box.grid(row=5, column=1, sticky="E")
+
+        # Set a default file name
+        self.text_box.delete(0, END)
+        self.text_box.insert(0, "savechess")
+
+        # '.txt' label
+        self.txt_label = Label(self.frame, text = ".txt")
+        self.txt_label.grid(row=5, column=2, sticky="W")
+
+        # Game instructions.
+        self.instructions = Label(self.frame, \
+        text="Ctrl + ... (S)ave | (L)oad | " + \
+        "(E)asy manual AI move | (H)ard manual AI move")
+        self.instructions.grid(row=6, column = 0, columnspan = 3)
 
         # Create the two players, white and black.
         self.white_player = Player("white")
@@ -711,14 +737,17 @@ class Chess(object):
         else:
             self.board.bind("<Button-1>", self.click_hold)
 
-        self.parent.bind("e", self.easy_step)
-        self.parent.bind("h", self.hard_step)
-        self.parent.bind("s", self.save)
-        self.parent.bind("l", self.load)
+        self.parent.bind("<Control-e>", self.easy_step)
+        self.parent.bind("<Control-h>", self.hard_step)
+        self.parent.bind("<Control-s>", self.save)
+        self.parent.bind("<Control-l>", self.load)
+        self.parent.bind("<Control-E>", self.easy_step)
+        self.parent.bind("<Control-H>", self.hard_step)
+        self.parent.bind("<Control-S>", self.save)
+        self.parent.bind("<Control-L>", self.load)
 
-        # Set a status message - blank for now.
-        self.status_message.config(text = "(S)ave | (L)oad | " + \
-        "(E)asy manual AI move | (H)ard manual AI move")
+        # Set a status message.
+        self.status_message.config(text = "Welcome to Chess!")
 
         # Make sure the first player is white.
         self.player = self.white_player
@@ -764,8 +793,10 @@ class Chess(object):
 
     def save(self, event):
         """
-        Saves the current game state to a file called "savechess.txt" in the
-        current working directory. Click/drag UI options are included.
+        Saves the current game state to a file. The name is whatever was entered
+        into the text box. If nothing was entered, it's given the default name
+        "savechess.txt" in the current working directory. Click/drag UI options
+        are included.
         """
         savelist = []
 
@@ -821,25 +852,35 @@ class Chess(object):
 
         savelist.append(self.mode)
 
+        filename = self.text_box.get() + ".txt"
+        if filename == ".txt":
+            filename = "savechess.txt"
+            self.text_box.insert(0, "savechess")
         try:
-            with open("savechess.txt", 'w', encoding = 'utf-8-sig') as output:
+            with open(filename, 'w', encoding = 'utf-8-sig') as output:
                 for item in savelist:
                     output.write(str(item) + "\n")
         except:
             self.status_message.config(text = "Error saving file.")
         else:
-            self.status_message.config(text = "File saved as savechess.txt" + \
-            " to current directory.")
+            self.status_message.config(text = "File saved as " + filename + \
+            ".")
 
     def load(self, event):
         """
-        Looks in the current working directory for a file called
-        "savechess.txt". If it exists, its data are used to restore a save
-        state. Click/drag UI options are included.
+        Looks for a file with a name matching whatever was entered in the text
+        box. If nothing is in the text box, it looks for a file called
+        "savechess.txt" in the current working directory. If a file is found,
+        its data are used to restore a save state. Click/drag UI options are
+        included.
         """
         savelist = []
+        filename = self.text_box.get() + ".txt"
+        if filename == ".txt":
+            filename = "savechess.txt"
+            self.text_box.insert(0, "savechess")
         try:
-            with open('savechess.txt', 'r', encoding = 'utf-8-sig') as file:
+            with open(filename, 'r', encoding = 'utf-8-sig') as file:
                 for line in file:
                     savelist.append(line[:-1])
         except:
@@ -922,9 +963,11 @@ class Chess(object):
             self.board.bind("<Button-1>", self.click_hold)
 
         if self.player is self.black_player:
-            self.status_message.config(text = "File loaded! Black's turn.")
+            self.status_message.config(text = "File loaded from " + \
+            filename + "! Black's turn.")
         else:
-            self.status_message.config(text = "File loaded! White's turn.")
+            self.status_message.config(text = "File loaded from " + \
+            filename + "! White's turn.")
 
         if self.black_king.location == "88":
             self.board.unbind("<Button-1>")
