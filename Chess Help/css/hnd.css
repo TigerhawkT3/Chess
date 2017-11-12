@@ -88,6 +88,25 @@ span.rvts16
  font-family: 'Courier New', 'Courier', monospace;
  font-style: italic;
 }
+span.rvts17
+{
+ font-size: 12pt;
+ font-weight: bold;
+}
+span.rvts18
+{
+ font-size: 12pt;
+}
+span.rvts19
+{
+ font-style: italic;
+ font-weight: bold;
+}
+span.rvts20
+{
+ font-size: 16pt;
+ font-weight: bold;
+}
 /* ========== Para Styles ========== */
 p,ul,ol /* Paragraph Style */
 {
