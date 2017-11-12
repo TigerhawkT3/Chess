@@ -12,6 +12,8 @@
 from tkinter import *
 from random import *
 import sys
+from pygame import mixer
+import time
 
 class Player(object):
     """
@@ -361,7 +363,7 @@ class Square(object):
 class Chess(object):
 
     """
-    An object of this class represents a Chess game, with easy mode
+    An object of this class represents a Chess game, with easy mode, hard mode,
     and two-player mode.
 
     Attributes:
@@ -488,6 +490,8 @@ class Chess(object):
             dragged around in click-drag mode
         autosave (boolean): True if the file to be saved or loaded is the
             autosave, False otherwise
+        sound_folder (string): Folder containing the sound files.
+        audio (boolean): True if the user wants sound effects, False otherwise.
     """
     def __init__(self, parent):
 
@@ -554,40 +558,124 @@ class Chess(object):
         self.txt_label = Label(self.frame, text = ".txt")
         self.txt_label.grid(row=5, column=2, sticky="W")
 
-        # Game instructions.
-        self.instructions = Label(self.frame, \
-        text="Ctrl + ... (S)ave | (L)oad | (Z)Undo\n" + \
-        "(E)asy manual AI move | (H)ard manual AI move")
-        self.instructions.grid(row=6, column = 0, columnspan = 3)
+
 
         # Create the two players, white and black.
         self.white_player = Player("white")
         self.black_player = Player("black")
 
-        icon_folder = "piece_icons/"
-        if len(sys.argv) > 1:
-            icon_folder = sys.argv[1] + "/"
+        """
+        Default sounds from http://www.trekcore.com/audio:
+            game_start.ogg - computerbeep_50.mp3 'Computer Beep 50'
+            ui_toggle.ogg - hologram_off_2.mp3 'Hologram Off 2'
+            audio_on.ogg - computerbeep_73.mp3 'Computer Beep 73'
+            select_piece.ogg - computerbeep_55.mp3 'Computer Beep 55'
+            move_piece.ogg - computerbeep_74.mp3 'Computer Beep 74'
+            computer_move.ogg - computerbeep_75.mp3 'Computer Beep 75'
+            castle.ogg - energize.mp3 'Energize'
+            undo.ogg - input_failed_clean.mp3 'Input Failed 1'
+            torpedo.ogg - tng_torpedo_clean.mp3 'TNG Torpedo 1'
+            explosion.ogg - largeexplosion4.mp3 'Large Explosion 4'
+        """
+        audiostring = " | (A)udio"
+        self.audio = True
 
         try:
-            self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
+            mixer.init(buffer=512)
+            try:
+                self.sound_folder = sys.argv[2] + "/"
+                mixer.music.load(self.sound_folder + "ui_toggle.ogg")
+                mixer.music.load(self.sound_folder + "audio_on.ogg")
+                mixer.music.load(self.sound_folder + "select_piece.ogg")
+                mixer.music.load(self.sound_folder + "move_piece.ogg")
+                mixer.music.load(self.sound_folder + "computer_move.ogg")
+                mixer.music.load(self.sound_folder + "castle.ogg")
+                mixer.music.load(self.sound_folder + "undo.ogg")
+                mixer.music.load(self.sound_folder + "torpedo.ogg")
+                mixer.music.load(self.sound_folder + "explosion.ogg")
+                mixer.music.load(self.sound_folder + "game_start.ogg")
+            except:
+                self.sound_folder = "sfx/"
+                mixer.music.load(self.sound_folder + "ui_toggle.ogg")
+                mixer.music.load(self.sound_folder + "audio_on.ogg")
+                mixer.music.load(self.sound_folder + "select_piece.ogg")
+                mixer.music.load(self.sound_folder + "move_piece.ogg")
+                mixer.music.load(self.sound_folder + "computer_move.ogg")
+                mixer.music.load(self.sound_folder + "castle.ogg")
+                mixer.music.load(self.sound_folder + "undo.ogg")
+                mixer.music.load(self.sound_folder + "torpedo.ogg")
+                mixer.music.load(self.sound_folder + "explosion.ogg")
+                mixer.music.load(self.sound_folder + "game_start.ogg")
+            self.parent.bind("<Control-a>", self.audio_toggle)
+            self.parent.bind("<Control-A>", self.audio_toggle)
         except:
-            icon_folder = "piece_icons/"
+            audiostring = ""
+            self.audio = False
+            self.parent.after(0, self.audio_failed)
+
+        # Game instructions.
+        self.instructions = Label(self.frame, \
+        text="Ctrl + ... (S)ave | (L)oad | (Z)Undo" + audiostring + "\n" + \
+        "(E)asy manual AI move | (H)ard manual AI move")
+        self.instructions.grid(row=6, column = 0, columnspan = 3)
+
+
+
+        try: # first we'll try an arg-specified folder.
+            icon_folder = sys.argv[1] + "/"
             self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
-        self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
-        self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
-        self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
-        self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
-        self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
+            self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
+            self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
+            self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
+            self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
+            self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
 
-        self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
-        self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
-        self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
-        self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
-        self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
-        self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
+            self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
+            self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
+            self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
+            self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
+            self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
+            self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
 
-        self.transparent_square_gif = \
-        PhotoImage(file=icon_folder+"transparent_square.gif")
+            self.transparent_square_gif = \
+            PhotoImage(file=icon_folder+"transparent_square.gif")
+        except: # something failed? switch to the default.
+            icon_folder = "piece_icons/"
+
+        try: # I hope the default icons work.
+            self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
+            self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
+            self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
+            self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
+            self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
+            self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
+
+            self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
+            self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
+            self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
+            self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
+            self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
+            self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
+
+            self.transparent_square_gif = \
+            PhotoImage(file=icon_folder+"transparent_square.gif")
+        except: # they didn't? warn the user of the flagrant error and quit.
+            self.easy_button.config(state=DISABLED)
+            self.hard_button.config(state=DISABLED)
+            self.human_button.config(state=DISABLED)
+            self.black_click_button.config(state=DISABLED)
+            self.white_click_button.config(state=DISABLED)
+            self.castle_black_left_button.config(state=DISABLED)
+            self.castle_black_right_button.config(state=DISABLED)
+            self.castle_white_left_button.config(state=DISABLED)
+            self.castle_white_right_button.config(state=DISABLED)
+            self.instructions.config(text = \
+            "FLAGRANT ERROR: Could not find images for the piece icons.\n" + \
+            "If you specified a folder, it is missing or corrupted.\n" + \
+            "The default folder is missing or corrupted.\n" + \
+            "The game will exit automatically in 30 seconds.")
+            self.parent.after(30000, self.images_failed)
+            return
 
         self.piece_pics = {"black_king":self.black_king_gif,
         "black_queen":self.black_queen_gif, "black_rook":self.black_rook_gif,
@@ -599,11 +687,10 @@ class Chess(object):
         "white_knight":self.white_knight_gif,
         "white_pawn":self.white_pawn_gif,
         "transparent_square":self.transparent_square_gif}
-
-        self.autosave = False
-
         # Draws the board, which involves reinitialization of match-specific
         # variables.
+        self.autosave = False
+
         self.draw_board()
 
     def draw_board(self):
@@ -762,6 +849,14 @@ class Chess(object):
 
         # Set a status message.
         self.status_message.config(text = "Welcome to Chess!")
+
+        if self.audio:
+            if not self.autosave:
+                mixer.music.load(self.sound_folder + "game_start.ogg")
+                mixer.music.play()
+            else:
+                mixer.music.load(self.sound_folder + "undo.ogg")
+                mixer.music.play()
 
         # Make sure the first player is white.
         self.player = self.white_player
@@ -1201,6 +1296,9 @@ class Chess(object):
 
         self.move(piece_to_move, move)
         self.check_castles()
+        if self.audio and self.white_king.location != "88":
+            mixer.music.load(self.sound_folder + "computer_move.ogg")
+            mixer.music.play()
 
     def hard_move(self):
         """
@@ -1345,6 +1443,9 @@ class Chess(object):
 
         self.move(piece_to_move, move)
         self.check_castles()
+        if self.audio and self.white_king.location != "88":
+            mixer.music.load(self.sound_folder + "computer_move.ogg")
+            mixer.music.play()
 
     def piece_priority(self, living_pieces, safe_moves, enemy_pieces,
     enemy_moves, check_ally, check_enemy):
@@ -1463,6 +1564,9 @@ class Chess(object):
         for move in token.moveset:
             self.board.itemconfig(self.squares[int(move[0])][int(move[1])],
             fill=color+"green")
+        if self.audio:
+            mixer.music.load(self.sound_folder + "select_piece.ogg")
+            mixer.music.play()
         return True
 
     def choose_target(self, click):
@@ -1493,10 +1597,17 @@ class Chess(object):
             self.save(0)
             self.autosave = False
             self.move(self.chosen_piece, click)
+            if self.audio and self.black_king.location != "88" and \
+            self.white_king.location != "88":
+                delay = 1000
+                mixer.music.load(self.sound_folder + "move_piece.ogg")
+                mixer.music.play()
+            else:
+                delay = 0
             if self.mode == "easy" and self.black_king.location != "88":
-                self.easy_move()
+                self.parent.after(delay,self.easy_move)
             if self.mode == "hard" and self.black_king.location != "88":
-                self.hard_move()
+                self.parent.after(delay,self.hard_move)
             self.check_castles()
 
     def move(self, chosen_piece, destination):
@@ -1571,20 +1682,11 @@ class Chess(object):
             target_piece.location = "88"
             if self.black_king.location == "88":
                 target_piece = chosen_piece
-                self.status_message.config(text = "White wins!")
-                self.board.unbind("<Button-1>")
-                self.castle_black_left_button.config(state=DISABLED)
-                self.castle_black_right_button.config(state=DISABLED)
-                self.castle_white_left_button.config(state=DISABLED)
-                self.castle_white_right_button.config(state=DISABLED)
+                self.game_end("White")
             if self.white_king.location == "88":
                 target_piece = chosen_piece
-                self.status_message.config(text = "Black wins!")
-                self.board.unbind("<Button-1>")
-                self.castle_black_left_button.config(state=DISABLED)
-                self.castle_black_right_button.config(state=DISABLED)
-                self.castle_white_left_button.config(state=DISABLED)
-                self.castle_white_right_button.config(state=DISABLED)
+                self.game_end("Black")
+
             self.check_castles()
             Chess.all_squares.get(destination).piece = target_piece \
             = chosen_piece
@@ -1603,6 +1705,24 @@ class Chess(object):
                 self.board.bind("<Button-1>", self.click_click)
             else:
                 self.board.bind("<Button-1>", self.click_hold)
+
+    def game_end(self, winner):
+        self.status_message.config(text = winner + " wins!")
+        self.board.unbind("<Button-1>")
+        self.castle_black_left_button.config(state=DISABLED)
+        self.castle_black_right_button.config(state=DISABLED)
+        self.castle_white_left_button.config(state=DISABLED)
+        self.castle_white_right_button.config(state=DISABLED)
+        if self.audio:
+            mixer.music.load(self.sound_folder + "torpedo.ogg")
+            mixer.music.play()
+            time.sleep(1)
+            mixer.music.play()
+            time.sleep(1)
+            mixer.music.play()
+            time.sleep(1)
+            mixer.music.load(self.sound_folder + "explosion.ogg")
+            mixer.music.play()
 
     def safe_pawns(self):
         """
@@ -1655,6 +1775,9 @@ class Chess(object):
         self.refresh_images()
         self.status_message.config(text = "Black castled queenside! " + \
         "White's turn.")
+        if self.audio:
+            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.play()
 
     def castle_black_right(self):
         """
@@ -1683,6 +1806,9 @@ class Chess(object):
         self.refresh_images()
         self.status_message.config(text = "Black castled kingside! " + \
         "White's turn.")
+        if self.audio:
+            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.play()
 
     def castle_white_left(self):
         """
@@ -1709,10 +1835,16 @@ class Chess(object):
         self.player = self.black_player
         self.check_castles()
         self.refresh_images()
+        if self.audio:
+            delay = 2000
+            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.play()
+        else:
+            delay = 0
         if self.mode == "easy":
-            self.easy_move()
+            self.parent.after(delay,self.easy_move)
         if self.mode == "hard":
-            self.hard_move()
+            self.parent.after(delay,self.hard_move)
         self.status_message.config(text = "White castled queenside! " + \
         "Black's turn.")
 
@@ -1741,10 +1873,14 @@ class Chess(object):
         self.player = self.black_player
         self.check_castles()
         self.refresh_images()
+        if self.audio:
+            delay = 2000
+            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.play()
         if self.mode == "easy":
-            self.easy_move()
+            self.parent.after(delay,self.easy_move)
         if self.mode == "hard":
-            self.hard_move()
+            self.parent.after(delay,self.hard_move)
         self.status_message.config(text = "White castled kingside! " + \
         "Black's turn.")
 
@@ -1785,6 +1921,10 @@ class Chess(object):
             self.white_king.location != "88":
                 self.board.bind("<Button-1>", self.click_click)
 
+        if self.audio:
+            mixer.music.load(self.sound_folder + "ui_toggle.ogg")
+            mixer.music.play()
+
     def white_ui_toggle(self):
         """
         Switches between the "click/click" move functionality and the
@@ -1805,10 +1945,36 @@ class Chess(object):
             self.white_king.location != "88":
                 self.board.bind("<Button-1>", self.click_click)
 
+        if self.audio:
+            mixer.music.load(self.sound_folder + "ui_toggle.ogg")
+            mixer.music.play()
+
+    def audio_toggle(self, event):
+        """
+        Switches between audio mode and silent mode, with a message.
+        """
+        if self.audio:
+            self.audio = False
+            mixer.music.stop()
+            self.status_message.config(text = "Audio deactivated.")
+        else:
+            self.audio = True
+            mixer.music.load(self.sound_folder + "audio_on.ogg")
+            mixer.music.play()
+            self.status_message.config(text = "Audio activated.")
+
+    def audio_failed(self):
+        self.status_message.config(text = "Audio load failed. Either " + \
+        "pygame is not installed, or sound folder is corrupted.")
+
+    def images_failed(self):
+        self.parent.destroy()
+
 def main():
     root = Tk() # Create a Tk object from tkinter.
     chess = Chess(root) # Make my game inherit from that object.
     root.mainloop() # Run the main loop.
+    mixer.music.stop()
 
 if __name__ == '__main__':
     main()
