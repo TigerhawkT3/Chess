@@ -1,0 +1,138 @@
+﻿<html>
+	
+<head>
+	<title>Troubleshooting</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.6.2.573">
+	<meta name="keywords" content="">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="css/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="css/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="css/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="css/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/hnd.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "Chess.html?" + sTopicUrl;
+			}
+			else if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+			{
+				top.FrameTOC.SelectTocItem("Troubleshooting");
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">Troubleshooting</h1>
+				
+				</div>
+			<div id="topic_header_nav">
+				<a href="CommandLine.html"><img src="img/arrow_left.png" alt="Previous"/></a>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<p class="rvps2"><span class="rvts6">You may encounter technical difficulties or other surprises when using Chess.</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<div class="rvps2"><table border="1" cellpadding="1" cellspacing="2" style="border-color: #000000; border-style: solid; border-spacing: 2px;">
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps3"><span class="rvts14">Problem</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts14">Resolution</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I didn't get any error message, but there's no audio.</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">If you're not hearing sounds from other programs that should be making sound and Chess didn't give you any sort of error message, the problem is likely something outside of Chess. Check that your sound card is working, check that your speakers are on and plugged in, and so on. </span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I specified a custom sound folder with the command line or the SFX Folder... option, then I got an error dialog saying "Unable to load audio from entered sound folder (absent or corrupted)."</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">If you specify a sound folder at the command line or choose one from the Settings menu, ensure that the folder contains the necessary .ogg format sound files (see </span><a class="rvts13" href="SFXfolder.html">SFX Folder...</a><span class="rvts6">). After you see this error, the game will try to load sounds from the default folder, which is a folder called "sfx", located in the same folder that contains your Chess executable. To fix the problem indicated by this error message, ensure that the custom sound folder you're trying to use contains all the necessary .ogg format sound files, and ensure that you have permission to read from this folder.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I started up Chess and got a console message saying "The pygame/mixer module is not installed. Please install it and try again." or an error dialog saying "Unable to load audio. Either the entered sound folder, previous sound folder, and default sound folder are absent or corrupted, or pygame is not installed."</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">This means that Chess couldn't manage to load audio. This could happen because it couldn't find or read the files (error dialog), or because Pygame isn't installed (console message). Pygame is the module that handles the game's audio. It could be absent if you're running Chess from source code and haven't installed Pygame, or if you're running Chess from the bundled package and deleted the Pygame module for some reason. If you don't provide Chess with a valid custom sound folder, and the default folder doesn't work either (not all files are valid and present, or you don't have read permission for that folder), it won't be able to load audio. To fix the problem indicated by this error message, ensure that Chess can access some kind of valid sound folder (either by specifying a custom folder or by closing Chess, repairing access to the default folder, and restarting Chess), and ensure that Pygame is installed.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I specified a custom icon folder with the command line or the Icons... option, then I got an error dialog saying "Couldn't load from the chosen folder. Make sure all files are present and properly named."</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">If you specify an icon folder at the command line or choose one from the Settings menu, ensure that the folder contains the necessary image files (see </span><a class="rvts13" href="Icons.html">Icons...</a><span class="rvts6">). After you see this error, the game will try to load icons from the default folder, which is a folder called "piece_icons", located in the same folder that contains your Chess executable. To fix the problem indicated by this error message, ensure that the custom icon folder you're trying to use contains all the necessary image files, and ensure that you have permission to read from this folder.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I started up Chess and got an error dialog saying "Couldn't find images. Provide a command-line argument or default directory ('piece_icons' under the current directory) with valid images. Click OK to exit the program." and then I clicked OK and Chess closed. There may have been a console message saying "The Pillow module is not installed. Please install it and try again."</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">This means that Chess couldn't manage to load piece icons because it couldn't find or read the files. If you don't provide Chess with a valid custom icon folder, and the default folder doesn't work either (not all files are valid and present, or you don't have read permission for that folder), it won't be able to load the icons. Since icons are vital to the proper functioning of the game, Chess will close itself if it can't find the icons it needs. To fix the problem indicated by this error message, click OK to bypass the error message, then ensure that Chess can access some kind of valid icon folder (either a custom one or the default one, "piece_icons" in the same folder as the executable) and restart Chess.</span><br/><span class="rvts6"></span><br/><span class="rvts6">If you got a console message, you're missing the Pillow module. Install it to run Chess 9 from source, or get a complete, uncorrupted version of the bundled package to run Chess 9 from a bundled package.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I tried to save a file and got an error dialog saying "Error saving file. Ensure that there is room and you have write permission."</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">This means that something went wrong while trying to save a file. To fix the problem indicated by this error message, ensure that there is enough room in the drive you're trying to save to (even very long matches will need less than 1K of space), and ensure that you have permission to write to this folder.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I tried to open a file and got an error dialog saying "Error opening file. Ensure that there is room and you have write permission."</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">This means that something went wrong while trying to open a file. To fix the problem indicated by this error message, ensure that you have permission to write to this folder. NOTE: Only open files that are valid Chess 9 save files. The safest way to ensure this is to stick to save files actually created by Chess 9's save function.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I specified a custom square color with the command line, but it didn't work.</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">The specified color needs to be a valid hex code, e.g. </span><span class="rvts15">#ff00ff</span><span class="rvts6">, or a valid color name. See </span><a class="rvts13" href="Lightsquares.html">Light Squares...</a><span class="rvts6"> or </span><a class="rvts13" href="Darksquares.html">Dark Squares...</a><span class="rvts6"> for more information.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I can't see the square highlighting.</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">There are two potential reasons for this. First, make sure you're not using green, dark green, blue, or dark blue squares, as the highlighting won't be visible on top of its own color. Second, make sure that the piece icons you're using contain transparency somewhere - piece icons will expand to fill an entire square, so icons with no transparent areas will block their entire square and you won't see highlighting.</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="345" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">I opened Chess, and the window ends where the status message should be displayed.</span></p>
+</td>
+<td width="518" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">The status message is there, but the window wasn't created with the proper size. To refresh the window, choose </span><span class="rvts14">Settings &gt; Board &gt; Refresh</span><span class="rvts6">, press F5, or simply resize it yourself.</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p></p>
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2015 by David Muller. All Rights Reserved.</div>
+		</div>
+	</body>
+	
+</html>
+

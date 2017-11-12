@@ -1,0 +1,226 @@
+﻿<html>
+	
+<head>
+	<title>Command Line</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="generator" content="HelpNDoc Personal Edition 4.6.2.573">
+	<meta name="keywords" content="">
+	
+	<link type="text/css" rel="stylesheet" media="all" href="css/reset.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="css/base.css" />
+	<link type="text/css" rel="stylesheet" media="all" href="css/hnd.css" />
+	<!--[if lte IE 8]>
+		<link type="text/css" rel="stylesheet" media="all" href="css/ielte8.css" />
+	<![endif]-->
+	<style type="text/css">
+		#topic_header
+		{
+			background-color: #EFEFEF;
+		}
+	</style>
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/hnd.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			if (top.frames.length == 0)
+			{
+				var sTopicUrl = top.location.href.substring(top.location.href.lastIndexOf("/") + 1, top.location.href.length);
+				top.location.href = "Chess.html?" + sTopicUrl;
+			}
+			else if (top && top.FrameTOC && top.FrameTOC.SelectTocItem)
+			{
+				top.FrameTOC.SelectTocItem("CommandLine");
+			}
+		});
+	</script>
+	
+	</head>
+
+<body>
+
+<div id="topic_header">
+			<div id="topic_header_content">
+				<h1 id="topic_header_text">Command Line</h1>
+				
+				</div>
+			<div id="topic_header_nav">
+				<a href="About.html"><img src="img/arrow_left.png" alt="Previous"/></a>
+				
+				<a href="Troubleshooting.html"><img src="img/arrow_right.png" alt="Next"/></a>
+				
+				</div>
+			<div class="clear"></div>
+		</div>
+	<div id="topic_content">
+		
+<p></p>
+<p class="rvps2"><span class="rvts6">You can use the command line to start Chess in a customized way, without having to redo your settings every time you launch the game. You can use these command line options from a command line shell like Windows' cmd or Linux's bash, or from your OS's standard file explorer graphical interface.</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">Use these options by adding pairs of terms (not case-sensitive) to the launch command. The first term starts with an asterisk (" </span><span class="rvts15">*</span><span class="rvts6"> ") and specifies which option you're setting (e.g., choosing a new folder for piece icons). The second term specifies your choice for that option (e.g. the name of the folder).</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">From the command line, simply start adding terms to the </span><span class="rvts15">chess9.*</span><span class="rvts6"> command, separated by spaces. For example:</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts15">py chess9.py *size 600</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">The above command will start Chess with a board size of 600x600 pixels instead of the default 400x400.</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">You can combine as many options as you'd like, in any order (as long as </span><span class="rvts15">chess9.exe</span><span class="rvts6"> or </span><span class="rvts15">py chess9.py</span><span class="rvts6"> come first):</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts15">chess9.exe *size 600 *audio off</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">This will start Chess with a 600x600 board and audio turned off.</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts15">chess9.exe *AUdio oFF *Whiteui drAg *size 600</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">This will start Chess with audio turned off, White's UI mode set to Drag (see </span><a class="rvts13" href="UI.html">UI</a><span class="rvts6">), and a 600x600 board.</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">You can save a set of your favorite options with a batch file or with a shortcut (the following instructions use a Windows system).</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">To create a batch file:</span></p>
+<ol style="text-indent: 0px; margin-left: 24px; list-style-position: outside; list-style-type: decimal;">
+<li value="1" class="rvps2"><span class="rvts6">Create a new file and give it a </span><span class="rvts15">.bat</span><span class="rvts6"> extension.</span></li>
+<li value="2" class="rvps2"><span class="rvts6">Edit the empty file and write your command into it (e.g. </span><span class="rvts15">py chess9.py *size 600</span><span class="rvts6"> for source or </span><span class="rvts15">chess9.exe *size 600</span><span class="rvts6"> for a bundled package).</span></li>
+<li value="3" class="rvps2"><span class="rvts6">Save and close the file.</span></li>
+</ol>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">To create a custom shortcut:</span></p>
+<ol style="text-indent: 0px; margin-left: 24px; list-style-position: outside; list-style-type: decimal;">
+<li value="1" class="rvps2"><span class="rvts6">Right-click the chess9.* executable and select </span><span class="rvts15">Create shortcut</span><span class="rvts6">.</span></li>
+<li value="2" class="rvps2"><span class="rvts6">Right-click the new shortcut and select </span><span class="rvts15">Properties</span><span class="rvts6">.</span></li>
+<li value="3" class="rvps2"><span class="rvts6">Add your chosen switches and arguments to the end of the </span><span class="rvts15">Target:</span><span class="rvts6"> field (e.g. </span><span class="rvts15">"C:\Users\&lt;</span><span class="rvts16">username</span><span class="rvts15">&gt;\Downloads\Chess9\chess9.py" *size 600</span><span class="rvts6">).</span></li>
+<li value="4" class="rvps2"><span class="rvts6">Click OK.</span></li>
+</ol>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">Use the batch file or shortcut to launch your customized Chess.</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<p class="rvps2"><span class="rvts6">Here is a full list of the switches and arguments you can use:</span></p>
+<p class="rvps2"><span class="rvts6"><br/></span></p>
+<div class="rvps2"><table border="1" cellpadding="1" cellspacing="2" style="border-color: #000000; border-style: solid; border-spacing: 2px;">
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps3"><span class="rvts14">Switch</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps3"><span class="rvts14">Arguments</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps3"><span class="rvts14">Description</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*audio</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">on</span></p>
+<p class="rvps2"><span class="rvts15">off</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Start with the game's audio turned on or off. The default is on, so the </span><span class="rvts15">on</span><span class="rvts6"> argument isn't strictly necessary. You can actually provide any argument other than </span><span class="rvts15">off</span><span class="rvts6">, such as </span><span class="rvts15">14</span><span class="rvts6"> or </span><span class="rvts15">apple</span><span class="rvts6">, and the audio will be on. See </span><a class="rvts13" href="Onoff.html">On/off</a><span class="rvts6"> for more information. Example:</span></p>
+<p class="rvps2"><span class="rvts15">*audio off</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*audiofolder</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">&lt;</span><span class="rvts16">folderpath</span><span class="rvts15">&gt;</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify a folder other than the default (</span><span class="rvts15">sfx</span><span class="rvts6">) from which to load audio. See </span><a class="rvts13" href="SFXfolder.html">SFX Folder...</a><span class="rvts6"> for the files you'll need. It is okay to use paths with spaces. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*audiofolder wildwestsfx</span></p>
+<p class="rvps2"><span class="rvts15">*audiofolder C:\My Audio\chess\wildwestsfx</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*iconfolder</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts16">&lt;folderpath&gt;</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify a folder other than the default (</span><span class="rvts15">piece_icons</span><span class="rvts6">) from which to load icons. See </span><a class="rvts13" href="Icons.html">Icons...</a><span class="rvts6"> for the files you'll need. It is okay to use paths with spaces. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*iconfolder wildwesticons</span></p>
+<p class="rvps2"><span class="rvts15">*iconfolder C:\My Images\chess\wildwesticons</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*blackui</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">click</span></p>
+<p class="rvps2"><span class="rvts15">drag</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify whether Black's UI mode is set to click or drag. The default is click, so the </span><span class="rvts15">click</span><span class="rvts6"> argument isn't strictly necessary. You can actually provide any argument other than </span><span class="rvts15">drag</span><span class="rvts6">, such as </span><span class="rvts15">14</span><span class="rvts6"> or </span><span class="rvts15">apple</span><span class="rvts6">, and the UI will stay in click mode. See </span><a class="rvts13" href="UI.html">UI</a><span class="rvts6"> for more information. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*blackui click</span></p>
+<p class="rvps2"><span class="rvts15">*blackui drag</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*whiteui</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">click</span></p>
+<p class="rvps2"><span class="rvts15">drag</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify whether White's UI mode is set to click or drag. The default is click, so the </span><span class="rvts15">click</span><span class="rvts6"> argument isn't strictly necessary. You can actually provide any argument other than </span><span class="rvts15">drag</span><span class="rvts6">, such as </span><span class="rvts15">14</span><span class="rvts6"> or </span><span class="rvts15">apple</span><span class="rvts6">, and the UI will stay in click mode. See </span><a class="rvts13" href="UI.html">UI</a><span class="rvts6"> for more information. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*whiteui click</span></p>
+<p class="rvps2"><span class="rvts15">*whiteui drag</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*opponent</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">easy</span></p>
+<p class="rvps2"><span class="rvts15">hard</span></p>
+<p class="rvps2"><span class="rvts15">human</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify whether to set an easy AI opponent, a hard AI opponent, or a human opponent. The default is easy, so the </span><span class="rvts15">easy</span><span class="rvts6"> argument isn't strictly necessary. If you provide any argument other than </span><span class="rvts15">easy</span><span class="rvts6"> or </span><span class="rvts15">hard</span><span class="rvts6">, such as </span><span class="rvts15">14</span><span class="rvts6"> or </span><span class="rvts15">apple</span><span class="rvts6">, it will set the game to human mode. See </span><a class="rvts13" href="Opponent.html">Opponent</a><span class="rvts6"> for more information. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*opponent easy</span></p>
+<p class="rvps2"><span class="rvts15">*opponent hard</span></p>
+<p class="rvps2"><span class="rvts15">*opponent human</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*size</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">&lt;</span><span class="rvts16">number</span><span class="rvts15">&gt;</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify the height and width of the board, in pixels. If the number isn't between 200 and 2000, the default of 400 will be used. See </span><a class="rvts13" href="Size.html">Size...</a><span class="rvts6"> for more information. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*size 200</span></p>
+<p class="rvps2"><span class="rvts15">*size 840</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*light</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">&lt;</span><span class="rvts16">color</span><span class="rvts15">&gt;</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify the color of the light squares. This can be the name of a color, like </span><span class="rvts15">red</span><span class="rvts6">, or a hash/pound sign followed by a six-character hex code, like #</span><span class="rvts15">ff0000</span><span class="rvts6">. See </span><a class="rvts13" href="Lightsquares.html">Light squares...</a><span class="rvts6"> for more information. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*light red</span></p>
+<p class="rvps2"><span class="rvts15">*light #ff0000</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*dark</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">&lt;</span><span class="rvts16">color</span><span class="rvts15">&gt;</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify the color of the dark squares. This can be the name of a color, like </span><span class="rvts15">red</span><span class="rvts6">, or a hash/pound sign followed by a six-character hex code, like #</span><span class="rvts15">ff0000</span><span class="rvts6">. See </span><a class="rvts13" href="Darksquares.html">Dark Squares...</a><span class="rvts6"> for more information. Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*dark red</span></p>
+<p class="rvps2"><span class="rvts15">*dark #ff0000</span></p>
+</td>
+</tr>
+<tr valign="top">
+<td width="215" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">*savefile</span></p>
+</td>
+<td width="399" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts15">&lt;</span><span class="rvts16">filepath</span><span class="rvts15">&gt;</span></p>
+</td>
+<td width="798" style="border-color: #000000; border-style: solid; padding: 1px;"><p class="rvps2"><span class="rvts6">Specify a save file to be loaded immediately. It is okay to use paths with spaces. Don't forget to include the extension (</span><span class="rvts15">.txt</span><span class="rvts6">). Examples:</span></p>
+<p class="rvps2"><span class="rvts15">*savefile C:\My Documents\chess\semifinal.txt</span></p>
+<p class="rvps2"><span class="rvts15">*savefile fun.txt</span></p>
+</td>
+</tr>
+</table>
+</div>
+<p></p>
+</div>
+	
+	<div id="topic_footer">
+
+			<div id="topic_footer_content">
+				Copyright &copy; 2015 by David Muller. All Rights Reserved.</div>
+		</div>
+	</body>
+	
+</html>
+

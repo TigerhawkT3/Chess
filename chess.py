@@ -9,11 +9,34 @@
 # Licence:     <your license>
 #-------------------------------------------------------------------------------
 
-from tkinter import *
+try:
+    from tkinter import *
+except:
+    print("The tkinter module is not installed. Please install it and try again.")
+try:
+    from tkinter import filedialog
+except:
+    print("The tkinter/filedialog module is not installed. Please install it and try again.")
+try:
+    from tkinter import messagebox
+except:
+    print("The tkinter/messagebox module is not installed. Please install it and try again.")
+try:
+    from tkinter import colorchooser
+except:
+    print("The tkinter/colorchooser module is not installed. Please install it and try again.")
+try:
+    from pygame import mixer
+except:
+    print("The pygame/mixer module is not installed. Please install it and try again.")
+try:
+    from PIL import Image, ImageTk
+except:
+    print("The Pillow module is not installed. Please install it and try again.")
 from random import *
 import sys
-from pygame import mixer
 import time
+import os
 
 class Player(object):
     """
@@ -93,17 +116,19 @@ class Pawn(Piece):
         front-right.
         """
         self.moveset = set() # start with an empty set
+        range8 = range(8) # generate a range(8) object and save it
+        
         # look one space ahead
         loc = self.location[0] + str(int(self.location[1])+self.direction)
         if len(loc) == 2: # if there's no '-' sign in the location
             # and it's on the board
-            if int(loc[0]) in range(8) and int(loc[1]) in range(8):
+            if int(loc[0]) in range8 and int(loc[1]) in range8:
                 if Chess.all_squares.get(loc).piece is None: # and empty
                     self.moveset.add(loc) # add it
         # look another space ahead and do the same thing
         loc = loc[0]+str(int(loc[1])+self.direction)
         if len(loc) == 2:
-            if int(loc[0]) in range(8) and int(loc[1]) in range(8):
+            if int(loc[0]) in range8 and int(loc[1]) in range8:
                 # make sure it's the first move, though
                 if not self.moved and Chess.all_squares.get(loc).piece is None \
                 and Chess.all_squares.get(loc[0]+ \
@@ -114,14 +139,14 @@ class Pawn(Piece):
         str(int(self.location[1])+self.direction) # can it capture an enemy?
         if len(loc) == 2: # make sure there's no '-' sign
             # and it's on the board
-            if int(loc[0]) in range(8) and int(loc[1]) in range(8):
+            if int(loc[0]) in range8 and int(loc[1]) in range8:
                 # if there's a piece
                 if Chess.all_squares.get(loc).piece is not None:
                     # and it's an enemy
                     if Chess.all_squares.get(loc).piece.color is not self.color:
                         self.moveset.add(loc) # it's a valid move
-                elif int(loc[0]) in range(8) and \
-                int(loc[1])-self.direction in range(8): # no piece there
+                elif int(loc[0]) in range8 and \
+                int(loc[1])-self.direction in range8: # no piece there
                     # but there is a piece behind there
                     if Chess.all_squares.get \
                     (loc[0]+str(int(loc[1])-self.direction)).piece is not None:
@@ -136,14 +161,14 @@ class Pawn(Piece):
         str(int(self.location[1])+self.direction) # now the other capture square
         if len(loc) == 2: # if there's no '-' sign
             # and it's on the board
-            if int(loc[0]) in range(8) and int(loc[1]) in range(8):
+            if int(loc[0]) in range8 and int(loc[1]) in range8:
                 # and there's a piece there
                 if Chess.all_squares.get(loc).piece is not None:
                     # and the piece is an enemy
                     if Chess.all_squares.get(loc).piece.color is not self.color:
                         self.moveset.add(loc) # add the location
-                elif int(loc[0]) in range(8) and \
-                int(loc[1])-self.direction in range(8): # no piece there
+                elif int(loc[0]) in range8 and \
+                int(loc[1])-self.direction in range8: # no piece there
                     # but there is a piece behind there
                     if Chess.all_squares.get \
                     (loc[0]+str(int(loc[1])-self.direction)).piece is not None:
@@ -420,29 +445,29 @@ class Chess(object):
     and two-player mode.
 
     Attributes:
+        parent (Tk): the root Tk object
+        argvs (dictionary): a dictionary of switch:argument from the command
+            line. Switches are of the form "*light" and arguments are of the
+            form "blue".
         all_squares (dictionary): a class variable (not member variable) of
             the Chess class. The keys are two-character strings describing
             the location of an object on the board, and the values are Squares
             on the board.
         frame (Frame): a tkinter Frame that holds the visible game
-        easy_button (Button): a tkinter Button that launches a new AI match
-        human_button (Button): a tkinter Button that launches a new 2P match
-        castle_black_left_button (Button): a tkinter Button that performs the
-            black queenside castling, if legal
-        castle_black_right_button (Button): a tkinter Button that performs the
-            black kingside castling, if legal
-        castle_white_left_button (Button): a tkinter Button that performs the
-            white queenside castling, if legal
-        castle_white_right_button (Button): a tkinter Button that performs the
-            white kingside castling, if legal
+        menubar (Menu): the complete menu bar
+        filemenu (Menu): the "file" menu cascade
+        settingsmenu (Menu): the "settings" menu cascade
+        uimenu (Menu): the "ui" menu cascade under settings
+        opponentmenu (Menu): the "opponent" menu cascade under settings
+        audiomenu (Menu): the "audio" menu cascade under settings
+        boardmenu (Menu): the "board" menu cascade
+        navmenu (Menu): the "navigation" menu cascade
+        castlemenu (Menu): the "castling" menu cascade
+        helpmenu (Menu): the "help" menu cascade
         mode (string): "easy" for easy AI play, "hard" for hard AI play, and
             "human" for 2P matches
         status_message (Label): a tkinter Label that displays the appropriate
             message when a player wins
-        text_box (Entry): a tkinter Entry box for the user to enter a file name
-        txt_label (Label): a tkinter Label that just says '.txt'
-        instructions (Label): a tkinter Label with the hotkeys
-        instructions (Label): a tkinter Label that provides basic instructions
         white_player (Player): a Player object, using the white pieces
         black_player (Player): a Player object, using the black pieces
         black_king_gif (PhotoImage): a PhotoImage object containing a GIF of
@@ -518,6 +543,9 @@ class Chess(object):
         white_rook_2 (Rook): the kingside white rook
         extra_white_queens (list): a list with cells that point to the extra
             queens that white can unlock via pawn promotion
+        replaying (boolean): True if the game is in the middle of replaying a move
+        light_square_color (string): a string like "blue" or "#0000ff", for color
+        dark_square_color (string): a string like "blue" or "#0000ff", for color
         all_pieces (list): a list that points to each piece
         square_overlay (list): a 2D list that refers to each image that rests
             on a square. Squares with no piece have a transparent image, and
@@ -541,77 +569,131 @@ class Chess(object):
             current location
         dragged_piece (int): an int representation of the PhotoImage to be
             dragged around in click-drag mode
-        autosave (boolean): True if the file to be saved or loaded is the
-            autosave, False otherwise
         sound_folder (string): Folder containing the sound files.
         icon_folder (string): Folder containing the icon files.
         audio (boolean): True if the user wants sound effects, False otherwise.
+        movelist (list): a list of moves, in the form of "0077" for moving from
+            top left corner to bottom right corner, or "wl" for white
+            castling queenside
+        savename (string): the current filename for the active game. Is blank
+            after starting a new game.
+        replaycounter (int): an int that tells us what move we're on, to keep track
+            of where we are within the movelist
+        screen_size (int): the width and height of the canvas, in pixels
+        unsaved_changes (boolean): True if there are new moves in the movelist in
+            memory that have not yet been saved to disk
     """
     def __init__(self, parent):
-
+    
+        parent.protocol("WM_DELETE_WINDOW", self.quit) # redirects the OS's 'x' close button to self.quit()
         parent.title("Chess") # title for the window
+        try: # try to load an img for the window's icon (top left corner of title bar)
+            parent.tk.call('wm', 'iconphoto', parent._w, ImageTk.PhotoImage(Image.open("ico.png")))
+        except: # if it fails
+            pass # leave the user alone
         self.parent = parent
-
+        
+        # look for argv options and rejoin into a string, then lowercase,
+        # then split along ' *', then discard the first item
+        # for each string in that, the chars to the left of the FIRST space are a dictionary key,
+        # those to the right are the value - using partition() instead of split() allows
+        # arguments with spaces, which filenames sometimes include
+        self.argvs = {pair.partition(' ')[0]:pair.partition(' ')[2]
+        for pair in (' '.join(sys.argv)).lower().split(' *')[1:]}
+        # switches and commands:
+        # *iconfolder folder
+        # *audiofolder folder
+        # *audio on off
+        # *blackui click drag
+        # *whiteui click drag
+        # *opponent easy hard human
+        # *size int
+        # *light color
+        # *dark color
+        # *savefile file
+        
         # Here's the frame:
         self.frame = Frame(parent)
         self.frame.pack()
+                
+        self.screen_size = 400
 
-        # Here are three mode buttons:
-        self.easy_button = Button(self.frame, text =
-            "New easy game", fg="white", bg="black", command=self.new_easy)
-        self.easy_button.grid(row=0, column=0, padx=5, pady=5)
-        self.hard_button = Button(self.frame, text =
-            "New hard game", fg = "black", bg="#ECE9D8", command=self.new_hard)
-        self.hard_button.grid(row=0, column=1, padx=5, pady=5)
-        self.human_button = Button(self.frame, text =
-            "New 2P game", fg = "black", bg="#ECE9D8", command=self.new_human)
-        self.human_button.grid(row=0, column=2, padx=5, pady=5)
-
-        # Here are four castle buttons:
-        self.castle_black_left_button = Button(self.frame, text =
-            "Castle here", command=self.castle_black_left)
-        self.castle_black_left_button.grid(row=1, column=0, padx=5, pady=5)
-        self.castle_black_right_button = Button(self.frame, text =
-            "Castle here", command=self.castle_black_right)
-        self.castle_black_right_button.grid(row=1, column=2, padx=5, pady=5)
-        self.castle_white_left_button = Button(self.frame, text =
-            "Castle here", command=self.castle_white_left)
-        self.castle_white_left_button.grid(row=3, column=0, padx=5, pady=5)
-        self.castle_white_right_button = Button(self.frame, text =
-            "Castle here", command=self.castle_white_right)
-        self.castle_white_right_button.grid(row=3, column=2, padx=5, pady=5)
-
-        # Here are two UI-mode buttons:
-        self.black_click_button = Button(self.frame, text =
-            "Active mode:\nclick/click", command=self.black_ui_toggle)
-        self.black_click_button.grid(row=1, column=1, padx=5, pady=5)
-        self.white_click_button = Button(self.frame, text =
-            "Active mode:\nclick/click", command=self.white_ui_toggle)
-        self.white_click_button.grid(row=3, column=1, padx=5, pady=5)
-
+        self.audio = True
+        tempaudio = self.argvs.get('audio') # look for an audio argv
+        if tempaudio: # if it exists
+            if tempaudio == "off": # and it says off
+                self.audio = False # turn off audio
+                
+        self.last_source = self.chosen_piece = True # these can safely be checked and approved with an 'if'
+        
+        # Menu bar!
+        self.menubar = Menu(parent)
+        
+        self.filemenu = Menu(self.menubar, tearoff=0)
+        self.filemenu.add_command(label="New", command=self.new_game, underline=0, accelerator="Ctrl+N")
+        self.filemenu.add_command(label="Save", command=self.save_plain, underline=0, accelerator="Ctrl+S")
+        self.filemenu.add_command(label="Save As...", command=self.save_as, underline=0, accelerator="Ctrl+Shift+S")
+        self.filemenu.add_command(label="Open...", command=self.load, underline=0, accelerator="Ctrl+O")
+        self.filemenu.add_separator()
+        self.filemenu.add_command(label="Quit", command=self.quit, underline=0, accelerator="Ctrl+Q")
+        self.menubar.add_cascade(label="File", menu=self.filemenu)
+        
+        self.settingsmenu = Menu(self.menubar, tearoff=0)
+        self.uimenu = Menu(self.settingsmenu, tearoff=0)
+        self.uimenu.add_command(label="Black", command=self.black_ui_toggle, underline=0)
+        self.uimenu.add_command(label="White", command=self.white_ui_toggle, underline=0)
+        self.opponentmenu = Menu(self.settingsmenu, tearoff=0)
+        # lambda functions! all these do is define an inline function that calls self.set_opponent with a parameter
+        self.opponentmenu.add_command(label="Easy AI", command=(lambda: self.set_opponent("easy")), state=DISABLED)
+        self.opponentmenu.add_command(label="Hard AI", command=(lambda: self.set_opponent("hard")))
+        self.opponentmenu.add_command(label="Human", command=(lambda: self.set_opponent("human")))
+        self.audiomenu = Menu(self.settingsmenu, tearoff=0)
+        self.audiomenu.add_command(label="On/off", command=self.audio_toggle, underline=0, accelerator="Ctrl+A")
+        self.audiomenu.add_command(label="SFX folder...", command=self.audio_from_folder, underline=0, accelerator="Ctrl+U")
+        self.boardmenu = Menu(self.settingsmenu, tearoff=0)
+        self.boardmenu.add_command(label="Icons...", command=self.icons_from_folder, underline=0, accelerator="Ctrl+I")
+        self.boardmenu.add_command(label="Size...", command=self.choose_board_size)
+        self.boardmenu.add_command(label="Light squares...", command=(lambda: self.set_square_color('light')))
+        self.boardmenu.add_command(label="Dark squares...", command=(lambda: self.set_square_color('dark')))
+        self.boardmenu.add_command(label="Refresh", command=(lambda: self.set_board_size(Label(), self.screen_size)), underline=0, accelerator="F5")
+        self.settingsmenu.add_cascade(label="UI", menu=self.uimenu)
+        self.settingsmenu.add_cascade(label="Opponent", menu=self.opponentmenu)
+        self.settingsmenu.add_cascade(label="Audio", menu=self.audiomenu)
+        self.settingsmenu.add_cascade(label="Board", menu=self.boardmenu)
+        self.menubar.add_cascade(label="Settings", menu=self.settingsmenu)
+        
+        self.navmenu = Menu(self.menubar, tearoff=0)
+        self.navmenu.add_command(label="Step back (undo)", command=self.step_back, underline=0, accelerator="Ctrl+←")
+        self.navmenu.add_command(label="Step forward (redo)", command=self.step_forward, underline=0, accelerator="Ctrl+→")
+        self.navmenu.add_command(label="Beginning of match", command=self.step_start, underline=0, accelerator="Ctrl+↑")
+        self.navmenu.add_command(label="End of match", command=self.step_end, underline=0, accelerator="Ctrl+↓")
+        self.menubar.add_cascade(label="Navigation", menu=self.navmenu)
+                
+        self.castlemenu = Menu(self.menubar, tearoff=0)
+        self.castlemenu.add_command(label="Black queenside", command=self.castle_black_left, underline=0)
+        self.castlemenu.add_command(label="Black kingside", command=self.castle_black_right, underline=0)
+        self.castlemenu.add_separator()
+        self.castlemenu.add_command(label="White queenside", command=self.castle_white_left, underline=0)
+        self.castlemenu.add_command(label="White kingside", command=self.castle_white_right, underline=0)
+        self.menubar.add_cascade(label="Castle", menu=self.castlemenu)
+        
+        self.helpmenu = Menu(self.menubar, tearoff=0)
+        self.helpmenu.add_command(label="View help", command=self.help, underline=0, accelerator="F1")
+        self.helpmenu.add_command(label="About", command=self.about, underline=0)
+        self.menubar.add_cascade(label="Help", menu=self.helpmenu)
+        
+        parent.config(menu=self.menubar)
+        
         # The game starts on easy mode without making the player press a button.
         self.mode = "easy"
+        tempopponent = self.argvs.get('opponent') # look for the opponent switch
+        if tempopponent: # if the value wasn't None,
+            self.set_opponent(tempopponent) # set the opponent
 
         # Status message. When the game ends, the result is described here.
-        self.status_message = Label(self.frame, text = "")
-        self.status_message.grid(row=4, column = 0, columnspan=3)
-
-        # Filename box explanation
-        self.name_here = Label(self.frame, text = "Load/save a file/folder: ")
-        self.name_here.grid(row=5, column=0, sticky="E")
-
-        # Text box for entering a file name
-        self.text_box = Entry(self.frame, width=32, justify=RIGHT)
-        self.text_box.grid(row=5, column=1, sticky="E")
-
-        # Set a default file name
-        self.text_box.delete(0, END)
-        self.text_box.insert(0, "savechess")
-
-        # '.txt' label
-        self.txt_label = Label(self.frame, text = ".txt (or folder)")
-        self.txt_label.grid(row=5, column=2, sticky="W")
-
+        self.status_message = Label(self.frame, text = "Welcome to Chess!")
+        self.status_message.grid(row=1, column = 0)
+        
         # Create the two players, white and black.
         self.white_player = Player("white")
         self.black_player = Player("black")
@@ -629,126 +711,53 @@ class Chess(object):
             torpedo.ogg - tng_torpedo_clean.mp3 'TNG Torpedo 1'
             explosion.ogg - largeexplosion4.mp3 'Large Explosion 4'
         """
-        audiostring = " | (A)udio" # this will go in the instructions label
-        self.audio = True
-
+        self.sound_filenames = ("ui_toggle.ogg", "audio_on.ogg", "select_piece.ogg",
+        "move_piece.ogg", "computer_move.ogg", "castle.ogg", "undo.ogg",
+        "torpedo.ogg", "explosion.ogg", "game_start.ogg")
         try: # here, we're going to try enabling audio with pygame
             mixer.init(buffer=512) # initialize the mixer
             try: # first we'll look into the command line
-                self.sound_folder = sys.argv[2] + "/" # there was an argv
+                self.sound_folder = self.argvs.get('audiofolder') # try to get the folder from argvs
                 # so now we check to make sure every single audio file is
                 # present and can be loaded. it's either this or using
                 # try/except every time a sound is played.
-                mixer.music.load(self.sound_folder + "ui_toggle.ogg")
-                mixer.music.load(self.sound_folder + "audio_on.ogg")
-                mixer.music.load(self.sound_folder + "select_piece.ogg")
-                mixer.music.load(self.sound_folder + "move_piece.ogg")
-                mixer.music.load(self.sound_folder + "computer_move.ogg")
-                mixer.music.load(self.sound_folder + "castle.ogg")
-                mixer.music.load(self.sound_folder + "undo.ogg")
-                mixer.music.load(self.sound_folder + "torpedo.ogg")
-                mixer.music.load(self.sound_folder + "explosion.ogg")
-                mixer.music.load(self.sound_folder + "game_start.ogg")
+                for file in self.sound_filenames:
+                    mixer.music.load(os.path.join(self.sound_folder, file))
             except: # well, something failed in the command line attempt. either
             # there was no command line argv given there, or the folder was
             # missing, or one of the files was missing. so now we try the
             # default sound folder, checking it for every needed file.
-                self.sound_folder = "sfx/"
-                mixer.music.load(self.sound_folder + "ui_toggle.ogg")
-                mixer.music.load(self.sound_folder + "audio_on.ogg")
-                mixer.music.load(self.sound_folder + "select_piece.ogg")
-                mixer.music.load(self.sound_folder + "move_piece.ogg")
-                mixer.music.load(self.sound_folder + "computer_move.ogg")
-                mixer.music.load(self.sound_folder + "castle.ogg")
-                mixer.music.load(self.sound_folder + "undo.ogg")
-                mixer.music.load(self.sound_folder + "torpedo.ogg")
-                mixer.music.load(self.sound_folder + "explosion.ogg")
-                mixer.music.load(self.sound_folder + "game_start.ogg")
+                self.sound_folder = "sfx"
+                for file in self.sound_filenames:
+                    mixer.music.load(os.path.join(self.sound_folder, file))
             # if we've gotten this far, then an audio load was successful
             self.parent.bind("<Control-a>", self.audio_toggle) # bind buttons
             self.parent.bind("<Control-A>", self.audio_toggle)
+            self.audiomenu.entryconfig(0, state=NORMAL)
         except: # couldn't load audio for some reason. either pygame isn't
         # installed on the user's machine, or it couldn't find an audio folder.
-            audiostring = "" # so we won't mention audio in the instructions
             self.audio = False # we'll disable audio
+            self.audiomenu.entryconfig(0, state=DISABLED)
             # and we'll give the user a message telling them what happened
             self.parent.after(0, self.audio_failed)
 
-        # Game instructions.
-        self.instructions = Label(self.frame, \
-        text="Ctrl + ... (S)ave game | (L)oad game | (Z)Undo" + \
-        audiostring + "\n" + \
-        "a(U)dio from folder | (I)cons from folder\n" + \
-        "(E)asy manual AI move | (H)ard manual AI move")
-        self.instructions.grid(row=6, column = 0, columnspan = 3)
-
-
         # now we'll load the piece icons
-        try: # first we'll try an argv-specified folder
+        try:
             try:
-                icon_folder = sys.argv[1] + "/" # there was an argv
-                # so now we check to make sure every single icon file is
-                # present and can be loaded.
-                self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
-                self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
-                self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
-                self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
-                self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
-                self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
-
-                self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
-                self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
-                self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
-                self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
-                self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
-                self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
-
-                self.transparent_square_gif = \
-                PhotoImage(file=icon_folder+"transparent_square.gif")
-            except: # well, something failed in the command line attempt. either
-            # there was no command line argv given there, or the folder was
-            # missing, or one of the files was missing. so now we try the
-            # default icon folder, checking it for every needed file.
-                icon_folder = "piece_icons/"
-                self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
-                self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
-                self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
-                self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
-                self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
-                self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
-
-                self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
-                self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
-                self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
-                self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
-                self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
-                self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
-
-                self.transparent_square_gif = \
-                PhotoImage(file=icon_folder+"transparent_square.gif")
-        except: # couldn't load the piece icons. there was no helpful argv, and
-        # the default folder ("piece_icons") couldn't be found or had missing
-        # files. disable all buttons, announce the FLAGRANT ERROR, end this
-        # method immediately without organizing the icons or drawing the board,
-        # and auto-quit after 30 seconds.
-            self.easy_button.config(state=DISABLED)
-            self.hard_button.config(state=DISABLED)
-            self.human_button.config(state=DISABLED)
-            self.black_click_button.config(state=DISABLED)
-            self.white_click_button.config(state=DISABLED)
-            self.castle_black_left_button.config(state=DISABLED)
-            self.castle_black_right_button.config(state=DISABLED)
-            self.castle_white_left_button.config(state=DISABLED)
-            self.castle_white_right_button.config(state=DISABLED)
-            self.instructions.config(text = \
-            "FLAGRANT ERROR: Could not find images for the piece icons.\n" + \
-            "If you specified a folder, it is missing or corrupted.\n" + \
-            "The default folder is missing or corrupted.\n" + \
-            "The game will exit automatically in 30 seconds.")
-            self.parent.after(30000, self.images_failed)
+                self.load_icons(self.argvs.get('iconfolder'))
+            except:
+                self.load_icons("piece_icons")
+        except:
+            self.castlemenu.entryconfig(0, state=DISABLED)
+            self.castlemenu.entryconfig(1, state=DISABLED)
+            self.castlemenu.entryconfig(3, state=DISABLED)
+            self.castlemenu.entryconfig(4, state=DISABLED)
+            messagebox.showerror(title="Error", message=''.join(("Couldn't find images. Provide a command-line argument ",
+            "or default directory ('piece_icons' under the current directory) with valid images. Click OK ",
+            "to exit the program.")))
+            self.parent.after(1, self.parent.destroy)
             return
-
-        # this organizes this piece icons into an easily-accessed dictionary.
+        # this organizes the piece icons into an easily-accessed dictionary.
         # the keys match the 'type' string variable of Piece objects.
         self.piece_pics = {"black_king":self.black_king_gif,
         "black_queen":self.black_queen_gif, "black_rook":self.black_rook_gif,
@@ -760,41 +769,84 @@ class Chess(object):
         "white_knight":self.white_knight_gif,
         "white_pawn":self.white_pawn_gif,
         "transparent_square":self.transparent_square_gif}
-
-         # save the icon folder, as we may need to revert to it later
-        self.icon_folder = icon_folder
-
-        self.autosave = False # this is only true while undoing a move
-
+        
+        self.unsaved_changes = False # they just started the app, so there are no unsaved changes
+        self.replaying = False # indicate that we're not currently replaying - important for castle functions
+        self.light_square_color = 'white'
+        self.dark_square_color = 'gray35'
+        
         # Draws the board, which involves reinitialization of match-specific
         # variables.
-        self.draw_board()
+        self.new_game()
+        
+        # go through the blackui, whiteui, light, and dark switches
+        for argument in ['blackui', 'whiteui', 'light', 'dark']:
+            temp = self.argvs.get(argument) # assign that switch's value to a local var
+            if temp: # if it wasn't None,
+                if argument == 'blackui' and temp == 'drag': # if it was blackui and drag,
+                    self.black_ui_toggle() # switch black ui
+                elif argument == 'whiteui' and temp == 'drag': #  if it was whiteui and drag,
+                    self.white_ui_toggle() # switch white ui
+                else: # the only other items in the list are 'light' and 'dark', so...
+                    self.set_square_color(argument, temp) # set those squares to that color
+        
+        tempboard = self.argvs.get('size') # look for the size switch
+        if tempboard: # if the value wasn't None,
+            try:
+                tempboard = int(tempboard) # turn it into an int
+                tempsuppressaudio = self.audio
+                if tempsuppressaudio:
+                    self.audio = False
+                parent.after(1, lambda: self.set_board_size(Label(), tempboard)) # pass it in, with a dummy widget to destroy
+                if tempsuppressaudio:
+                    self.audio = True
+                    
+            except:
+                pass # or not -_-
+        
+        tempfile = self.argvs.get('savefile') # look for the savefile switch
+        if tempfile: # if the value wasn't None,
+            self.load('init', tempfile) # tell load that it was an 'init' load and pass it the filename
+            self.step_end() # and go to the most recent step of the replay
 
-    def draw_board(self):
+    def draw_board(self, *args):
         """
         Creates the game, wiping any previous conditions.
+        Parameter:
+            *args: maybe it was called with a keyboard shortcut
         """
-
         # This generates the board. Rectangles are saved to a 2D array.
-        self.board = Canvas(self.frame, width=400, height = 400)
+        self.board = Canvas(self.frame, width=self.screen_size, height = self.screen_size)
         self.last_source = None
-
+        
+        range8 = range(8) # make a range(8) object and save it
+        
         self.squares = [] # this is a 2D list of black/white squares
-        for row in range(8):
+        for row in range8:
             self.squares.append([])
-            for column in range(8):
+            for column in range8:
                 if (row+column)%2 == 0:
-                    color = 'white'
+                    color = self.light_square_color
                 else:
-                    color = 'black'
-                self.squares[row].append(self.board.create_rectangle(row*50,
-                    column*50,row*50+50,column*50+50, fill = color))
+                    color = self.dark_square_color
+                try: # this might not work if the user gave an invalid color in a command line arg
+                    self.squares[row].append(self.board.create_rectangle(row*(self.screen_size//8),
+                        column*(self.screen_size//8),row*(self.screen_size//8)+(self.screen_size//8),
+                        column*(self.screen_size//8)+(self.screen_size//8), fill = color))
+                except: # if the color was invalid,
+                    if color == self.light_square_color: # if it was light
+                        color = self.light_square_color = 'white' # replace invalid light with white
+                    else: # if it was dark
+                        color = self.dark_square_color = 'gray35' # replace invalid dark with gray35
+                    self.squares[row].append(self.board.create_rectangle(row*(self.screen_size//8),
+                        column*(self.screen_size//8),row*(self.screen_size//8)+(self.screen_size//8),
+                        column*(self.screen_size//8)+(self.screen_size//8), fill = color))
 
-        self.board.grid(row=2, column=0, columnspan=3)
+        self.board.grid(row=0, column=0)
 
         # Make a dictionary of location:Square.
         Chess.all_squares = {str(row)+str(column):Square(str(row)+str(column))
-            for row in range(8) for column in range(8)}
+            for row in range8 for column in range8}
 
         self.white_promotions = 0 # number of white pawns promoted into queens
         self.black_promotions = 0 # number of black pawns promoted into queens
@@ -816,7 +868,7 @@ class Chess(object):
         self.black_pawn_6 = Pawn("black", "51")
         self.black_pawn_7 = Pawn("black", "61")
         self.black_pawn_8 = Pawn("black", "71")
-        self.extra_black_queens = [Queen("black", "88") for i in range(8)]
+        self.extra_black_queens = [Queen("black", "88") for i in range8]
 
         self.white_pawn_1 = Pawn("white", "06")
         self.white_pawn_2 = Pawn("white", "16")
@@ -834,7 +886,7 @@ class Chess(object):
         self.white_bishop_2 = Bishop("white", "57")
         self.white_knight_2 = Knight("white", "67")
         self.white_rook_2 = Rook("white", "77")
-        self.extra_white_queens = [Queen("white", "88") for i in range(8)]
+        self.extra_white_queens = [Queen("white", "88") for i in range8]
 
         # This will put pieces in each square to set up the game.
         Chess.all_squares.get("00").piece = self.black_rook_1
@@ -880,7 +932,7 @@ class Chess(object):
         self.black_pawn_4, self.black_pawn_5, self.black_pawn_6,
         self.black_pawn_7, self.black_pawn_8]
 
-        for i in range(8):
+        for i in range8:
             self.all_pieces.append(self.extra_black_queens[i])
 
         self.all_pieces += [self.white_pawn_1, self.white_pawn_2,
@@ -890,22 +942,21 @@ class Chess(object):
         self.white_queen, self.white_king, self.white_bishop_2,
         self.white_knight_2, self.white_rook_2]
 
-        for i in range(8):
+        for i in range8:
             self.all_pieces.append(self.extra_white_queens[i])
 
         self.square_overlay = [] # a list of all the piece icons or transparent
         # images that can rest on any given square
-        for row in range(8):
+        for row in range8:
             self.square_overlay.append([])
-            for column in range(8):
+            for column in range8:
                 self.square_overlay[row].append \
-                (self.board.create_image(row*50,column*50,
+                (self.board.create_image(row*(self.screen_size//8),column*(self.screen_size//8),
                 anchor=NW,image=None))
 
         # this is the image that can float around the board, used when a player
         # is using the click-and-drag interface
-        self.dragged_piece = self.board.create_image(50,50, \
-        image=self.piece_pics.get("transparent_square"))
+        self.dragged_piece = self.board.create_image((self.screen_size//8),(self.screen_size//8), image=self.piece_pics.get("transparent_square"))
 
         # look at the state of the board and put images where needed
         self.refresh_images()
@@ -920,32 +971,30 @@ class Chess(object):
             self.board.bind("<Button-1>", self.click_hold)
 
         # these are the game controls
-        self.parent.bind("<Control-e>", self.easy_step)
-        self.parent.bind("<Control-h>", self.hard_step)
-        self.parent.bind("<Control-s>", self.save)
-        self.parent.bind("<Control-l>", self.load)
-        self.parent.bind("<Control-z>", self.undo)
+        self.parent.bind("<Control-s>", self.save_plain) # differs from uppercase version
         self.parent.bind("<Control-u>", self.audio_from_folder)
         self.parent.bind("<Control-i>", self.icons_from_folder)
-        self.parent.bind("<Control-E>", self.easy_step)
-        self.parent.bind("<Control-H>", self.hard_step)
-        self.parent.bind("<Control-S>", self.save)
-        self.parent.bind("<Control-L>", self.load)
-        self.parent.bind("<Control-Z>", self.undo)
+        self.parent.bind("<Control-q>", self.quit)
+        self.parent.bind("<Control-o>", self.load)
+        self.parent.bind("<Control-n>", self.new_game)
+        self.parent.bind("<Control-S>", self.save_as) # differs from lowercase version
         self.parent.bind("<Control-U>", self.audio_from_folder)
         self.parent.bind("<Control-I>", self.icons_from_folder)
-
-        # Set a status message.
-        self.status_message.config(text = "Welcome to Chess!")
-
+        self.parent.bind("<Control-Q>", self.quit)
+        self.parent.bind("<Control-O>", self.load)
+        self.parent.bind("<Control-N>", self.new_game)
+        
+        self.parent.bind("<F1>", self.help)
+        self.parent.bind("<Control-Left>", self.step_back)
+        self.parent.bind("<Control-Up>", self.step_start)
+        self.parent.bind("<Control-Right>", self.step_forward)
+        self.parent.bind("<Control-Down>", self.step_end)
+        self.parent.bind("<F5>", lambda x: self.set_board_size(Label(), self.screen_size))
+        
         if self.audio: # if audio is on
-            if not self.autosave: # and this isn't being restored with undo
-                mixer.music.load(self.sound_folder + "game_start.ogg")
-                mixer.music.play() # play 'game_start'
-            else: # if it's being restored with undo
-                mixer.music.load(self.sound_folder + "undo.ogg")
-                mixer.music.play() # play the 'undo' sound
-
+            mixer.music.load(os.path.join(self.sound_folder, "game_start.ogg"))
+            mixer.music.play() # play 'game_start'
+            
         # Make sure the first player is white.
         self.player = self.white_player
 
@@ -961,288 +1010,383 @@ class Chess(object):
         self.last_ai_piece = self.black_king # the AI needs to check what piece
         # it moved last, so this makes sure it can do that even before its first
         # move
-
-    def easy_step(self, event):
+    
+    def choose_board_size(self):
         """
-        If it's currently black's turn, this tells the easy AI to make one move.
+        This method will change the size of the board, then redraw the icons to fit.
+        The user will choose the board size with a slider (Scale widget).
+        """
+        sizewindow = Toplevel()
+        sizewindow.title("Board size")
+        try: # try to load an img for the window's icon (top left corner of title bar)
+            sizewindow.tk.call('wm', 'iconphoto', sizewindow._w, ImageTk.PhotoImage(Image.open("ico.png")))
+        except: # if it fails
+            pass # leave the user alone
+            
+        for width in range(200, 1000, 100): # inspect a series of widths
+            if width < (0.35 * self.parent.winfo_screenwidth()): # to find a window size about a third of their screen
+                use = width # use the biggest appropriate size
+        sizewindow.geometry(str(use) +"x145") # define a window size
+        # create a Scale widget
+        sizescale = Scale(sizewindow, from_=200, to=2200, orient=HORIZONTAL, length=(use-6), resolution=40, tickinterval=200)
+        sizescale.set(self.screen_size) # set it to the current game board size
+        sizescale.grid(row=0, column=0, columnspan=5) # and grid it
+        
+        for res in range(200, 2001, 40): # inspect a series of resolutions
+            # to find a game board size that's appropriate for the user's monitor
+            if res < (0.8 * min(self.parent.winfo_screenwidth(), self.parent.winfo_screenheight())):
+                use = str(res) # use the biggest appropriate size
+        
+        recommendation = Label(sizewindow, text="Recommended setting: " + use) # tell the user the recommendation
+        recommendation.grid(row=1, column=0, columnspan=5) # grid the resolution
+        # an 'ok' button that, on click, sends the current window and the chosen size to set_board_size()
+        ok = Button(sizewindow, text="\nOK\n", width=15, height=3, command=lambda: self.set_board_size(sizewindow, sizescale.get()))
+        ok.grid(row=2, column=1) # grid the ok button
+        cancel = Button(sizewindow, text="\nCancel\n", width=15, height=3, command=sizewindow.destroy) # cancel button
+        cancel.grid(row=2, column=3) # grid the cancel button
+    
+    def set_board_size(self, topwindow, size):
+        """
+        Sets the board size with the specified value.
+        Parameters:
+            topwindow (widget): a widget that this method will destroy
+            size (int): the new size of the board
+        """
+        if size not in range(200, 2001): # if the user provided an invalid screen size, via argv
+            return # don't use it
+        self.screen_size = size # save the new size
+        
+        self.parent.geometry("".join((str(size+4),"x",str(size+25)))) # set the window size to match the board
+        if len(self.movelist) == 0 or self.replaycounter ==0: # if the movelist is empty or we're at the start
+            try:
+                self.board.destroy() # destroy it if it's there
+            except:
+                pass # if not, fine
+            self.draw_board() # and redraw it
+        else: # if there are moves to do,
+            self.replaycounter +=1 # advance the replay counter by 1
+            tempsuppressaudio = self.audio # note if we have to suppress audio
+            if tempsuppressaudio: # if we do,
+                self.audio = False # suppress it
+            self.step_back() # and go 'back' to there, which puts us at the same place
+            if tempsuppressaudio: # if we did,
+                self.audio = True # turn it back on
+        
+        self.load_icons(self.icon_folder) # reload the icons for the new size
+        self.refresh_images() # and refresh them
+        
+        topwindow.destroy() # destroy the dialog box where we chose this
+
+    def load_icons(self, directory):
+        """
+        This loads piece icons from a given directory.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            directory (string): a string with the directory path
         """
-        # if it's black's turn and the game isn't over
-        if self.player is self.black_player and \
-        self.black_king.location != "88" \
-        and self.white_king.location != "88":
-            self.easy_move() # make an easy move
-            self.status_message.config(text = "Easy AI moved for Black! " + \
-            "White's turn.") # and announce that
-        else: # if not
-            self.status_message.config(text = "It must be Black's " + \
-            "turn for that.") # explain why it didn't move
-
-    def hard_step(self, event):
+        files = os.listdir(directory) # get a listing of the files in this directory
+        for file in files: # look through the files
+            file = file.lower() # make the file all lowercase
+            # when a file is found, join the directory with a slash with the name, open as an image, resize it, and make it a PhotoImage for tkinter
+            if "black" in file: # if a file says black
+                if "king" in file: # and king, it's the black king
+                    self.black_king_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "queen" in file: # and queen, it's the black queen
+                    self.black_queen_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "rook" in file: # and rook, it's the black rook
+                    self.black_rook_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "bishop" in file: # and bishop, it's the black bishop
+                    self.black_bishop_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "knight" in file: # and knight, it's the black knight
+                    self.black_knight_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "pawn" in file: # and pawn, it's the black pawn
+                    self.black_pawn_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+            elif "white" in file: # if a file says white
+                if "king" in file: # and king, it's the white king
+                    self.white_king_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "queen" in file: # and queen, it's the white queen
+                    self.white_queen_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "rook" in file: # and rook, it's the white rook
+                    self.white_rook_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "bishop" in file: # and bishop, it's the white bishop
+                    self.white_bishop_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "knight" in file: # and knight, it's the white knight
+                    self.white_knight_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+                elif "pawn" in file: # and pawn, it's the white pawn
+                    self.white_pawn_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+            elif "transparent" in file: # if the file says transparent, it's the transparent square
+                self.transparent_square_gif = ImageTk.PhotoImage(Image.open(os.path.join(directory, file)).resize(((self.screen_size//8),(self.screen_size//8))))
+        
+        # save the icon folder, as we may need to revert to it later
+        self.icon_folder = directory
+        
+        # this organizes the piece icons into an easily-accessed dictionary.
+        # the keys match the 'type' string variable of Piece objects.
+        self.piece_pics = {"black_king":self.black_king_gif,
+        "black_queen":self.black_queen_gif, "black_rook":self.black_rook_gif,
+        "black_bishop":self.black_bishop_gif, \
+        "black_knight":self.black_knight_gif,
+        "black_pawn":self.black_pawn_gif, "white_king":self.white_king_gif,
+        "white_queen":self.white_queen_gif, "white_rook":self.white_rook_gif,
+        "white_bishop":self.white_bishop_gif, \
+        "white_knight":self.white_knight_gif,
+        "white_pawn":self.white_pawn_gif,
+        "transparent_square":self.transparent_square_gif}
+    
+    def set_opponent(self, opponent):
         """
-        If it's currently black's turn, this tells the hard AI to make one move.
+        Sets the opponent mode to 'easy', 'hard', or 'human', then pops an info box.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            opponent (string): the mode to be changed to
         """
-        # if it's black's turn and the game isn't over
-        if self.player is self.black_player and \
-        self.black_king.location != "88" \
-        and self.white_king.location != "88":
-            self.hard_move() # make a hard move
-            self.status_message.config(text = "Hard AI moved for Black! " + \
-            "White's turn.") # and announce that
-        else: # if not
-            self.status_message.config(text = "It must be Black's " + \
-            "turn for that.") # explain why it didn't move
+        self.mode = opponent # set the mode to the given opponent
+        for i in range(3): # go through 0 to 3
+            self.opponentmenu.entryconfig(i, state=NORMAL) # make those opponentmenu ids NORMAL
+        if opponent == "easy": # if easy was selected
+            self.opponentmenu.entryconfig(0, state=DISABLED) # disable
+        elif opponent == "hard": # if hard was selected
+            self.opponentmenu.entryconfig(1, state=DISABLED) # disable
+        else: # otherwise
+            self.opponentmenu.entryconfig(2, state=DISABLED) # disable human
+        messagebox.showinfo(title="Opponent changed", message="Opponent mode changed to " + opponent + ".") # and note such
+    
+    def new_game(self, *args):
+        """
+        Starts a new game, reinitializing the save name, move list, and replay counter.
+        Paramter:
+            *args: may or may not include an event
+        """
+        # if there are unsaved changes and user confirms, save (will ask for filename if necessary)
+        if self.unsaved_changes:
+            temp = messagebox.askyesnocancel(title="Unsaved changes", \
+            message="There are unsaved changes to your game. Save now?")
+            if temp == None: # if they cancel
+                return # then return
+            if temp: # if they didn't cancel
+                if not self.save_plain(): # but then they canceled the save itself
+                    return # that's a return
+        
+        try:
+            self.board.destroy() # destroy it if it's there
+        except:
+            pass # if not, fine
+        self.draw_board() # then make a new one
+        
+        self.savename = "" # a save name will need to be chosen
+        self.movelist = [] # a fresh movelist
+        self.replaycounter = 0 # start from the beginning of a new match
+        self.unsaved_changes = False
 
-    def save(self, event):
+        # Set a status message.
+        self.status_message.config(text = "Welcome to Chess!")
+        
+    def step_back(self, *args):
         """
-        Saves the current game state to a file. The name is whatever was entered
-        into the text box. If nothing was entered, it's given the default name
-        "savechess.txt" in the current working directory. Click/drag UI options
-        are included.
+        Move back one step in a replay. Nothing ever actually moves backwards - it works
+        by going to the beginning and stepping forward all the way until one move prior to
+        where it was.
+        Paramter:
+            *args: may or may not include an event
+        """
+        # if there are no loaded moves, or we're already at the the very beginning
+        if len(self.movelist) == 0 or self.replaycounter == 0:
+            return # return and do nothing
+        count = self.replaycounter - 1 # decrement the replay counter by 1
+        self.step_start() # go to the beginning
+        for i in range(count): # go forward that number of times
+            self.step_forward(wait=True)
+        if self.audio: # if audio is on
+            mixer.music.load(os.path.join(self.sound_folder, "undo.ogg"))
+            mixer.music.play() # play the 'undo' sound
+        self.check_castles()
+        self.refresh_highlighting()
+        self.refresh_images()
+        
+    def step_forward(self, *args, **kwargs):
+        """
+        Move forward one step in a replay.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            *args: may or may not include an event
         """
-        savelist = [] # a list of variables to be written to a file. This
-        # includes everything needed to restore a game to its previous state.
-
-        savelist.append(self.player.color) # whose turn it is
-        savelist.append(self.black_player.mode) # black's UI mode
-        savelist.append(self.black_promotions) # black's promoted pawns
-        savelist.append(self.white_player.mode) # white's UI mode
-        savelist.append(self.white_promotions) # white's promoted pawns
-
-        for piece in range(48): # location of all 48 pieces
-            savelist.append(self.all_pieces[piece].location)
-
-        # whether each pawn has moved and whether it's vulnerable
-        savelist.append(self.black_pawn_1.moved)
-        savelist.append(self.black_pawn_1.vulnerable)
-        savelist.append(self.black_pawn_2.moved)
-        savelist.append(self.black_pawn_2.vulnerable)
-        savelist.append(self.black_pawn_3.moved)
-        savelist.append(self.black_pawn_3.vulnerable)
-        savelist.append(self.black_pawn_4.moved)
-        savelist.append(self.black_pawn_4.vulnerable)
-        savelist.append(self.black_pawn_5.moved)
-        savelist.append(self.black_pawn_5.vulnerable)
-        savelist.append(self.black_pawn_6.moved)
-        savelist.append(self.black_pawn_6.vulnerable)
-        savelist.append(self.black_pawn_7.moved)
-        savelist.append(self.black_pawn_7.vulnerable)
-        savelist.append(self.black_pawn_8.moved)
-        savelist.append(self.black_pawn_8.vulnerable)
-
-        savelist.append(self.white_pawn_1.moved)
-        savelist.append(self.white_pawn_1.vulnerable)
-        savelist.append(self.white_pawn_2.moved)
-        savelist.append(self.white_pawn_2.vulnerable)
-        savelist.append(self.white_pawn_3.moved)
-        savelist.append(self.white_pawn_3.vulnerable)
-        savelist.append(self.white_pawn_4.moved)
-        savelist.append(self.white_pawn_4.vulnerable)
-        savelist.append(self.white_pawn_5.moved)
-        savelist.append(self.white_pawn_5.vulnerable)
-        savelist.append(self.white_pawn_6.moved)
-        savelist.append(self.white_pawn_6.vulnerable)
-        savelist.append(self.white_pawn_7.moved)
-        savelist.append(self.white_pawn_7.vulnerable)
-        savelist.append(self.white_pawn_8.moved)
-        savelist.append(self.white_pawn_8.vulnerable)
-
-        # whether each rook or king has moved
-        savelist.append(self.black_rook_1.moved)
-        savelist.append(self.black_rook_2.moved)
-        savelist.append(self.black_king.moved)
-        savelist.append(self.white_rook_1.moved)
-        savelist.append(self.white_rook_2.moved)
-        savelist.append(self.white_king.moved)
-
-        savelist.append(self.mode) # easy, hard, or human mode
-
-        if self.autosave: # if this is being autosaved
-            filename = "tempchess.txt" # indicate such
-        else: # if it's a deliberate save
-            filename = self.text_box.get() + ".txt" # get the filename
-            if filename == ".txt": # if it's empty,
-                filename = "savechess.txt" # use a default
-                self.text_box.insert(0, "savechess") # and say so
-
-        try: # write the above-created list to a file with the specified name
+        # if the movelist is empty or we're at the end of the replay (counter
+        # for next move matches length of list)
+        if len(self.movelist) == 0 or len(self.movelist) == self.replaycounter:
+            return # don't do anything
+        
+        if self.audio: # if audio is on,
+            self.audio = allow = False # turn it off and remember
+        else: # otherwise,
+            allow = True # set a permissive flag
+        
+        do_move = self.movelist[self.replaycounter] # save the next string in the movelist
+        self.replaying = True # tell the castle functions we're replaying, not really playing
+        if do_move == "bl": # if it's 'bl',
+            self.castle_black_left() # castle black left
+        elif do_move == "br": # if it's 'br',
+            self.castle_black_right() # castle black right
+        elif do_move == "wl": # if it's 'wl',
+            self.castle_white_left() # castle white left
+        elif do_move == "wr": # if it's 'wr',
+            self.castle_white_right() # castle white right
+        else: # if it's not a castle, it's a regular move
+            self.move(Chess.all_squares.get(do_move[0:2]).piece, do_move[2:]) # do the move
+        self.replaying = False # ready to play for real again
+        
+        self.replaycounter += 1 # increase the counter for the next move
+        if not allow: # if audio was suppressed,
+            self.audio = True # turn it back on
+        if not kwargs.get('wait'): # if we weren't told to wait til the end,
+            self.check_castles() # check castles now
+            self.refresh_images() # refresh images now
+            self.refresh_highlighting() # refresh highlighting now
+        
+    def step_start(self, *args):
+        """
+        Goes to the beginning of a replay.
+        Parameter:
+            *args: may or may not include an event
+        """
+        try:
+            self.board.destroy() # destroy the board if it's there
+        except:
+            pass # if not, fine
+        self.draw_board() # redraw it
+        self.replaycounter = 0 # start from the beginning of a replay
+    
+    def step_end(self, *args):
+        """
+        Goes to the end of a replay.
+        Parameter:
+            *args: may or may not include an event
+        """
+        if len(self.movelist) == 0: # if the movelist is empty
+            return # do nothing
+        while len(self.movelist) > self.replaycounter: # while we're not at the end of the movelist
+            self.step_forward(wait=True) # step forward
+        self.check_castles()
+        self.refresh_highlighting()
+        self.refresh_images()
+        
+    def help(self, *args):
+        """
+        Launches the Help content.
+        Parameter:
+            *args: may or may not include an event
+        """
+        helpfile = os.path.join(os.getcwd(),os.path.join("Chess Help", "Chess.html"))
+        try:
+            os.startfile(helpfile)
+        except:
+            messagebox.showerror(title='Help file not found',
+            message=''.join(("The help file wasn't accessible. Please make sure that ",
+            helpfile, " exists and that you have read permission for it.")))
+        
+    def about(self):
+        """
+        Launches a little window with the version number and my name.
+        """
+        about = Toplevel() # make a new window
+        about.title("About") # title it
+        about.geometry("200x150") # size it
+        spacer = Label(about, text="\t ") # make a spacer to move the content to the right by a bit
+        spacer.grid(row=0, column=0, rowspan=2) # put the spacer at the top
+        msg = Label(about, text="\n\n\nChess version 9\nBy David Muller\n\n") # make a message
+        msg.grid(row=0, column=1) # grid it
+        close = Button(about, text="Close Window", command=about.destroy) # make a button
+        close.grid(row=1, column=1) # grid it
+    
+    def save_plain(self, *args):
+        """
+        A plain save function. If there's no preexisting file name,
+        uses save_as() instead.
+        Parameter:
+            *args: may include an event
+        """
+        if self.savename: # if there's a name
+            self.save(self.savename) # then use it
+        elif self.save_as(): # else, use save_as instead
+            return True # successful save returns True
+        return False # else, return False
+        
+    def save_as(self, *args):
+        """
+        A save as function, which asks for a name and only retains it if it was given
+        (canceling makes empty string, which isn't saved).
+        Parameter:
+            *args: may include an event
+        """
+        temp = filedialog.asksaveasfilename(defaultextension=".txt", \
+        filetypes=(('Text files', '.txt'),('All files', '.*'))) # ask for a name
+        if temp: # if we got one,
+            self.savename = temp # retain it
+            self.save(temp) # and pass it to save()
+            return True
+        return False
+    
+    def save(self, filename):
+        """
+        Does the actual saving business of writing a file with the given name.
+        Parameter:
+            filename (string): the name of the file to write
+        """
+        try: # write the movelist to a file with the specified name
             with open(filename, 'w', encoding = 'utf-8-sig') as output:
-                for item in savelist:
-                    output.write(str(item) + "\n")
-            if not self.autosave:
-                self.status_message.config(text = "File saved as " + \
-                filename + ".")
+                for item in self.movelist:
+                    output.write(item + "\n")
+            self.unsaved_changes = False # they just saved, so there are no unsaved changes
         except: # if that doesn't work for some reason, say so
-            self.status_message.config(text = "Error saving file.")
-
-    def load(self, event):
+            messagebox.showerror(title="Error", \
+            message="Error saving file. Ensure that there is room and you have write permission.")
+            
+    def load(self, *args):
         """
-        Looks for a file with a name matching whatever was entered in the text
-        box. If nothing is in the text box, it looks for a file called
-        "savechess.txt" in the current working directory. If a file is found,
-        its data are used to restore a save state. Click/drag UI options are
-        included.
+        Loads a game from a file on the computer.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            *args: may be nothing, 'init' and a filename, or an event
         """
-        savelist = [] # a list that will be populated from a file
-
-        if self.autosave: # if this is from an autosave
-            filename = "tempchess.txt" # indicate such
-        else: # if it's a deliberate load
-            filename = self.text_box.get() + ".txt" # get the filename
-            if filename == ".txt": # if it's empty
-                filename = "savechess.txt" # use a default
-                self.text_box.insert(0, "savechess") # and say so
-
+        # if there are unsaved changes and the user wants to save,
+        if self.unsaved_changes:
+            temp = messagebox.askyesnocancel(title="Unsaved changes", \
+            message="There are unsaved changes to your game. Save now?")
+            if temp == None:
+                return
+            if temp:
+                if not self.save_plain(): # if the user chose yes but then canceled the save
+                    return # just return
+                # give them a save_plain(). this is how all programs work: if user wants a
+                # separate file, they have to use save_as(). if i used save_as() for this,
+                # user would get confused when asked to overwrite the file they were using.
+        
+        try:
+            args # first, see if there are any args
+            filename = args[1] # then see if there are two, and if so, grab the second one
+        except: # if a filename wasn't given,
+            filename = filedialog.askopenfilename(defaultextension=".txt", \
+            filetypes=(('Text files', '.txt'),('All files', '.*'))) # ask for a name
+            if not filename: # if they hit cancel, returning an empty string
+                return # just return
+                
+        try:
+            self.board.destroy() # destroy it if it's there
+        except:
+            pass # if not, fine
+        self.draw_board() # basically, start a new game
+        # and load the specified save file into a movelist
         try: # open the specified file and write the contents to the list
+            movelist = [] # create a blank movelist
             with open(filename, 'r', encoding = 'utf-8-sig') as file:
                 for line in file:
-                    savelist.append(line[:-1])
+                    movelist.append(line[:-1])
+                # the text file appears to end with a blank line, but that's really just the
+                # \n of the previous line, so there's no extraneous empty item at the end of the list.
+            self.movelist = movelist # replace the existing movelist with the loaded one
+            self.replaycounter = 0 # start from the beginning of a new match
+            self.unsaved_changes = False
+            if messagebox.askyesno(title="Load successful", message="Game loaded. Go to the most recent move?"):
+                self.step_end()
         except: # if that doesn't work for some reason, say so
-            self.status_message.config(text = "Save file not found.")
-            return # and end this method early
-
-        if savelist[-1] == "easy":
-            self.new_easy() # easy mode
-        elif savelist[-1] == "hard":
-            self.new_hard() # hard mode
-        else:
-            self.new_human() # human mode
-
-        # Make a dictionary of location:Square.
-        Chess.all_squares = {str(row)+str(column):Square(str(row)+str(column))
-            for row in range(8) for column in range(8)}
-
-        if savelist[0] == "black":
-            self.player = self.black_player # black's turn
-        else:
-            self.player = self.white_player # white's turn
-        if self.black_player.mode != savelist[1]: # if in wrong black UI mode
-            if self.audio: # if audio is on
-                # suppress it because the load/undo sound is higher priority
-                # than the UI mode sound
-                self.audio = False
-                self.black_ui_toggle() # toggle the UI mode
-                self.audio = True # and turn audio back on
-            else: # if audio is off
-                self.black_ui_toggle() # toggle the UI mode
-        self.black_promotions = int(savelist[2]) # promoted black pawns
-        if self.white_player.mode != savelist[3]: # if in wrong white UI mode
-            if self.audio: # if audio is on
-                # suppress it because the load/undo sound is higher priority
-                # than the UI mode sound
-                self.audio = False
-                self.white_ui_toggle() # toggle the UI mode
-                self.audio = True # and turn audio back on
-            else: # if audio is off
-                self.white_ui_toggle() # toggle the UI mode
-        self.white_promotions = int(savelist[4]) # promoted white pawns
-
-        for piece in range(48): # location of all 48 pieces
-            self.all_pieces[piece].location = savelist[piece+5]
-            if self.all_pieces[piece].location != "88":
-                Chess.all_squares.get(savelist[piece+5]).piece = \
-                self.all_pieces[piece]
-
-        # whether each pawn has moved and whether it's vulnerable
-        self.black_pawn_1.moved = (savelist[53] == "True")
-        self.black_pawn_1.vulnerable = (savelist[54] == "True")
-        self.black_pawn_2.moved = (savelist[55] == "True")
-        self.black_pawn_2.vulnerable = (savelist[56] == "True")
-        self.black_pawn_3.moved = (savelist[57] == "True")
-        self.black_pawn_3.vulnerable = (savelist[58] == "True")
-        self.black_pawn_4.moved = (savelist[59] == "True")
-        self.black_pawn_4.vulnerable = (savelist[60] == "True")
-        self.black_pawn_5.moved = (savelist[61] == "True")
-        self.black_pawn_5.vulnerable = (savelist[62] == "True")
-        self.black_pawn_6.moved = (savelist[63] == "True")
-        self.black_pawn_6.vulnerable = (savelist[64] == "True")
-        self.black_pawn_7.moved = (savelist[65] == "True")
-        self.black_pawn_7.vulnerable = (savelist[66] == "True")
-        self.black_pawn_8.moved = (savelist[67] == "True")
-        self.black_pawn_8.vulnerable = (savelist[68] == "True")
-
-        self.white_pawn_1.moved = (savelist[69] == "True")
-        self.white_pawn_1.vulnerable = (savelist[70] == "True")
-        self.white_pawn_2.moved = (savelist[71] == "True")
-        self.white_pawn_2.vulnerable = (savelist[72] == "True")
-        self.white_pawn_3.moved = (savelist[73] == "True")
-        self.white_pawn_3.vulnerable = (savelist[74] == "True")
-        self.white_pawn_4.moved = (savelist[75] == "True")
-        self.white_pawn_4.vulnerable = (savelist[76] == "True")
-        self.white_pawn_5.moved = (savelist[77] == "True")
-        self.white_pawn_5.vulnerable = (savelist[78] == "True")
-        self.white_pawn_6.moved = (savelist[79] == "True")
-        self.white_pawn_6.vulnerable = (savelist[80] == "True")
-        self.white_pawn_7.moved = (savelist[81] == "True")
-        self.white_pawn_7.vulnerable = (savelist[82] == "True")
-        self.white_pawn_8.moved = (savelist[83] == "True")
-        self.white_pawn_8.vulnerable = (savelist[84] == "True")
-
-        # whether each rook or king has moved
-        self.black_rook_1.moved = (savelist[85] == "True")
-        self.black_rook_2.moved = (savelist[86] == "True")
-        self.black_king.moved = (savelist[87] == "True")
-        self.white_rook_1.moved = (savelist[88] == "True")
-        self.white_rook_2.moved = (savelist[89] == "True")
-        self.white_king.moved = (savelist[90] == "True")
-
-        if self.player.mode == "click": # current UI mode binding
-            self.board.bind("<Button-1>", self.click_click)
-        else:
-            self.board.bind("<Button-1>", self.click_hold)
-
-        if self.player is self.black_player: # announce whose turn it is
-            self.status_message.config(text = "File loaded from " + \
-            filename + "! Black's turn.")
-        else:
-            self.status_message.config(text = "File loaded from " + \
-            filename + "! White's turn.")
-
-        if self.black_king.location == "88": # if white has already won
-            self.board.unbind("<Button-1>") # unbind the mouse
-            self.status_message.config(text = "White wins!") # announce winner
-        if self.white_king.location == "88": # if black has already won
-            self.board.unbind("<Button-1>") # unbind the mouse
-            self.status_message.config(text = "Black wins!") # announce winner
-
-        self.check_castles() # check which castle buttons should be active
-        self.refresh_images() # display images for each piece
-
-    def undo(self, event):
-        """
-        Undoes the last human move (plus an AI move, if relevant) by loading the
-        temporary save file. If there's no temporary save file, a generic
-        loading error message is displayed. If a new game was just started or
-        loaded and no one has moved yet, undo will go back to the previous
-        game. Undo can be used even after someone has won. Undo serves as a
-        sort of crash protection, as it saves the entire game state every time
-        someone moves - just start the program up and hit undo.
-        Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
-        """
-        self.autosave = True # specify that this load is from an autosave
-        self.load(event) # load, and it'll use the right data automatically
-        self.autosave = False # turn autosave flag back off
-
-        if self.player is self.black_player: # say whose turn it is
-            player = "Black"
-        else:
-            player = "White"
-        self.status_message.config(text = "Move undone. " + \
-            player + "'s turn.")
-
+            messagebox.showerror(title="Error", \
+            message="Error opening file. Ensure that there is room and you have write permission.")
+        
     def check_castles(self):
         """
         Checks if anyone can castle, then makes the appropriate buttons
@@ -1257,18 +1401,18 @@ class Chess(object):
         Chess.all_squares.get("10").piece is None and
         Chess.all_squares.get("20").piece is None and
         Chess.all_squares.get("30").piece is None):
-            self.castle_black_left_button.config(state=NORMAL)
+            self.castlemenu.entryconfig(0, state=NORMAL)
         else:
-            self.castle_black_left_button.config(state=DISABLED)
+            self.castlemenu.entryconfig(0, state=DISABLED)
         if(not self.black_rook_2.moved and not self.black_king.moved and
         self.black_king.location != "88" and \
         self.white_king.location != "88" and
         self.player is self.black_player and
         Chess.all_squares.get("50").piece is None and
         Chess.all_squares.get("60").piece is None):
-            self.castle_black_right_button.config(state=NORMAL)
+            self.castlemenu.entryconfig(1, state=NORMAL)
         else:
-            self.castle_black_right_button.config(state=DISABLED)
+            self.castlemenu.entryconfig(1, state=DISABLED)
         if(not self.white_rook_1.moved and not self.white_king.moved and
         self.black_king.location != "88" and \
         self.white_king.location != "88" and
@@ -1276,18 +1420,18 @@ class Chess(object):
         Chess.all_squares.get("17").piece is None and
         Chess.all_squares.get("27").piece is None and
         Chess.all_squares.get("37").piece is None):
-            self.castle_white_left_button.config(state=NORMAL)
+            self.castlemenu.entryconfig(3, state=NORMAL)
         else:
-            self.castle_white_left_button.config(state=DISABLED)
+            self.castlemenu.entryconfig(3, state=DISABLED)
         if(not self.white_rook_2.moved and not self.white_king.moved and
         self.black_king.location != "88" and \
         self.white_king.location != "88" and
         self.player is self.white_player and
         Chess.all_squares.get("57").piece is None and
         Chess.all_squares.get("67").piece is None):
-            self.castle_white_right_button.config(state=NORMAL)
+            self.castlemenu.entryconfig(4, state=NORMAL)
         else:
-            self.castle_white_right_button.config(state=DISABLED)
+            self.castlemenu.entryconfig(4, state=DISABLED)
 
     def generate_all_movesets(self):
         """
@@ -1331,57 +1475,6 @@ class Chess(object):
         for piece in self.extra_white_queens:
             piece.generate_moveset()
 
-    def new_easy(self):
-        """
-        Starts a new game on one-player easy mode.
-        """
-
-        # Generate the board.
-        self.draw_board()
-
-        # Set easy mode.
-        self.mode = "easy"
-
-        # Highlight the button of the current mode, and make sure the other
-        # buttons are not highlighted.
-        self.easy_button.config(fg="white", bg="black")
-        self.hard_button.config(fg="black", bg="#ECE9D8")
-        self.human_button.config(fg="black", bg="#ECE9D8")
-
-    def new_hard(self):
-        """
-        Starts a new game on one-player hard mode.
-        """
-
-        # Generate the board.
-        self.draw_board()
-
-        # Set easy mode.
-        self.mode = "hard"
-
-        # Highlight the button of the current mode, and make sure the other
-        # buttons are not highlighted.
-        self.easy_button.config(fg="black", bg="#ECE9D8")
-        self.hard_button.config(fg="white", bg="black")
-        self.human_button.config(fg="black", bg="#ECE9D8")
-
-    def new_human(self):
-        """
-        Starts a new game on two-player mode.
-        """
-
-        # Generate the board.
-        self.draw_board()
-
-        # Set two-player mode.
-        self.mode = "human"
-
-        # Highlight the button of the current mode, and make sure the other
-        # buttons are not highlighted.
-        self.easy_button.config(fg="black", bg="#ECE9D8")
-        self.hard_button.config(fg="black", bg="#ECE9D8")
-        self.human_button.config(fg="white", bg="black")
-
     def easy_move(self):
         """
         This does nothing but choose a valid piece and move, and carry it out.
@@ -1412,17 +1505,16 @@ class Chess(object):
                 piece_to_move = piece # use an appropriate piece
                 move = self.white_king.location # and win
 
-        # color the squares to indicate the move's origin and target
-        self.board.itemconfig(self.squares[int(piece_to_move.location[0])]
-            [int(piece_to_move.location[1])], fill="darkblue")
-        self.board.itemconfig(self.squares[int(move[0])]
-            [int(move[1])], fill="darkgreen")
-
+        # truncate and write the move in the movelist
+        self.movelist = self.movelist[:self.replaycounter]
+        self.replaycounter += 1
+        self.movelist.append(piece_to_move.location + move)
         self.move(piece_to_move, move) # carry out the move
+        self.unsaved_changes = True # note that there are unsaved changes to this game
         self.check_castles() # check castling buttons
         # if audio is on and the AI didn't just win
         if self.audio and self.white_king.location != "88":
-            mixer.music.load(self.sound_folder + "computer_move.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "computer_move.ogg"))
             mixer.music.play() # play the 'computer_move' sound
 
     def hard_move(self):
@@ -1489,120 +1581,46 @@ class Chess(object):
         # puts a stop to it
         while (move not in safe_moves and len(safe_moves) > 5) or \
         (piece_to_move is self.black_king and randint(0,9) in range(9)):
-            piece_to_move = sample(safe_pieces, 1)[0] # pick another piece
-            # and another move
-            move = sample(piece_to_move.moveset & safe_moves, 1)[0]
+            try: # try to sample that set
+                piece_to_move = sample(safe_pieces, 1)[0] # pick another piece
+                # and another move
+                move = sample(piece_to_move.moveset & safe_moves, 1)[0]
+            except: # if there are no safe pieces, it'll just use a living piece
+                piece_to_move = sample(living_pieces, 1)[0] # pick a random piece
+                move = sample(piece_to_move.moveset, 1)[0] # and a random move
 
-        # check the queenside knights
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_knight_1, self.white_knight_1)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a knight
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_knight":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # and use the returned move
-
-        # check the kingside knights
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_knight_2, self.white_knight_2)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a knight
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_knight":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # and use the returned move
-
-        # check the queenside bishops
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_bishop_1, self.white_bishop_1)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a bishop
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_bishop":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # and use the returned move
-
-        # check the kingside bishops
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_bishop_2, self.white_bishop_2)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a bishop
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_bishop":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # and use the returned move
-
-        # check the queenside rooks
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_rook_1, self.white_rook_1)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a rook
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_rook":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # and use the returned move
-
-        # check the kingside rooks
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_rook_2, self.white_rook_2)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a rook
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_rook":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # use the returned move
-
-        # check the queens
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_queen, self.white_queen)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a queen
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_queen":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # use the returned move
-
-        # check the extra queens
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.extra_black_queens[1], self.extra_white_queens[1])
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a queen
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_queen":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # use the returned move
-
-        # check the kings
-        decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
-        enemy_moves, self.black_king, self.white_king)
-        if decision[0]: # if there's a capture or escape
-            # if there's a capture or the current plan is to escape with a
-            # lower-priority piece or the moving piece isn't a king
-            if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type != "black_king":
-                piece_to_move = decision[2] # use the returned piece
-                move = decision[3] # use the returned move
-
-        # fill the source and target squares with the proper colors
-        self.board.itemconfig(self.squares[int(piece_to_move.location[0])]
-            [int(piece_to_move.location[1])], fill="darkblue")
-        self.board.itemconfig(self.squares[int(move[0])]
-            [int(move[1])], fill="darkgreen")
-
+        # make a set of pairs of pieces for comparison
+        piece_pairs = ((self.black_knight_1,self.white_knight_1),
+        (self.black_knight_2,self.white_knight_2),
+        (self.black_bishop_1,self.white_bishop_1),
+        (self.black_bishop_2,self.white_bishop_2),
+        (self.black_rook_1,self.white_rook_1),
+        (self.black_rook_2,self.white_rook_2),
+        (self.black_queen,self.white_queen),
+        (self.black_king,self.white_king))
+        
+        for pair in piece_pairs:
+            decision = self.piece_priority(living_pieces, safe_moves, enemy_pieces,
+            enemy_moves, pair[0], pair[1])
+            if decision[0]: # if there's a capture or escape
+                # if there's a capture or the current plan is to escape with a
+                # lower-priority piece or the moving piece isn't a knight
+                if decision[1] or Chess.all_squares.get(move).piece is None or \
+                piece_to_move.type != pair[0].type:
+                    piece_to_move = decision[2] # use the returned piece
+                    move = decision[3] # and use the returned move
+        
+        # truncate and write the move in the movelist
+        self.movelist = self.movelist[:self.replaycounter]
+        self.replaycounter += 1
+        # write the move in the movelist
+        self.movelist.append(piece_to_move.location + move)
         self.move(piece_to_move, move) # move
+        self.unsaved_changes = True # note that there are unsaved changes to this game
         self.check_castles() # check castling buttons
         # if there's audio and the AI didn't just win
         if self.audio and self.white_king.location != "88":
-            mixer.music.load(self.sound_folder + "computer_move.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "computer_move.ogg"))
             mixer.music.play() # play the 'computer_move' sound
 
     def piece_priority(self, living_pieces, safe_moves, enemy_pieces,
@@ -1645,7 +1663,7 @@ class Chess(object):
 
         # Parses the mouse cursor location at the time of the click into a
         # string that the game's logic can handle.
-        click = str(event.x//50) + str(event.y//50)
+        click = str(event.x//(self.screen_size//8)) + str(event.y//(self.screen_size//8))
         token = Chess.all_squares.get(click).piece
 
         if self.first_click: # if it's the first click
@@ -1668,7 +1686,7 @@ class Chess(object):
 
         # Parses the mouse cursor location at the time of the click into a
         # string that the game's logic can handle.
-        click = str(event.x//50) + str(event.y//50)
+        click = str(event.x//(self.screen_size//8)) + str(event.y//(self.screen_size//8))
         token = Chess.all_squares.get(click).piece
 
         if not self.choose_piece(token): # if no piece was chosen
@@ -1710,7 +1728,7 @@ class Chess(object):
         self.board.itemconfig(self.dragged_piece, image=self.piece_pics.get
         ("transparent_square"))
         # choose the cursor's current location as a target
-        self.choose_target(str(event.x//50) + str(event.y//50))
+        self.choose_target(str(event.x//(self.screen_size//8)) + str(event.y//(self.screen_size//8)))
         self.board.unbind("<B1-Motion>") # unbind the 'motion' effect
         self.board.unbind("<ButtonRelease-1>") # and the 'release' effect
         self.refresh_images() # refresh the board to see what we've got
@@ -1741,7 +1759,7 @@ class Chess(object):
             self.board.itemconfig(self.squares[int(move[0])][int(move[1])],
             fill=color+"green")
         if self.audio: # if audio is on
-            mixer.music.load(self.sound_folder + "select_piece.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "select_piece.ogg"))
             mixer.music.play() # play the 'select_piece' sound
         return True # piece was chosen
 
@@ -1756,9 +1774,9 @@ class Chess(object):
         for row in range(8):
             for column in range(8):
                 if (row+column)%2 == 0:
-                    color = 'white'
+                    color = self.light_square_color
                 else:
-                    color = 'black'
+                    color = self.dark_square_color
                 self.board.itemconfig(self.squares[row][column], fill=color)
         if self.player is self.white_player: # if it's white's turn
             color = "dark" # add a 'dark' color prefix
@@ -1777,17 +1795,19 @@ class Chess(object):
             return # and return out of this method
         # if the target square is in the chosen piece's moveset
         if click in self.chosen_piece.moveset:
-            self.autosave = True # set autosave
-            self.save(0) # and save
-            self.autosave = False # turn off autosave
+            self.movelist = self.movelist[:self.replaycounter]
+            self.replaycounter += 1
+            # write the move in the movelist
+            self.movelist.append(self.chosen_piece.location + click)
             self.move(self.chosen_piece, click) # move the piece
+            self.unsaved_changes = True # note that there are unsaved changes to this game
             # if black hasn't lost
             if self.black_king.location != "88":
                 delay = 0
                 # if audio is on and white hasn't lost
                 if self.audio and self.white_king.location != "88":
                     delay = 1000 # set a 1000ms delay
-                    mixer.music.load(self.sound_folder + "move_piece.ogg")
+                    mixer.music.load(os.path.join(self.sound_folder, "move_piece.ogg"))
                     mixer.music.play() # play the 'move_piece' sound
                 if self.mode == "easy": # if easy mode is on
                     self.parent.after(delay,self.easy_move) # do an easy move
@@ -1805,30 +1825,8 @@ class Chess(object):
                 square
         """
         # if there was a piece moved previously
-        if self.last_source is not None and self.last_target is not None:
-            for row in range(8): # go by row
-                for column in range(8): # and column
-                    if (row+column)%2 == 0: # and every other square
-                        color = 'white' # should be white
-                    else:
-                        color = 'black' # or black
-                    # recolor the board
-                    self.board.itemconfig(self.squares[row][column], fill=color)
         self.last_source = chosen_piece.location # this piece is the last source
         self.last_target = destination # its destination is the last target
-        if self.player is self.white_player: # if white went
-            color = "" # no color prefix
-            self.status_message.config(text = "Black's turn.") # announce black
-        else: # if black went
-            color = "dark" # 'dark' color prefix
-            self.status_message.config(text = "White's turn.") # announce white
-        # color the last source with a variety of blue
-        self.board.itemconfig(self.squares[int(self.last_source[0])]
-            [int(self.last_source[1])], fill=color+"blue")
-        # color the last target with a variety of green
-        self.board.itemconfig(self.squares[int(self.last_target[0])]
-            [int(self.last_target[1])], fill=color+"green")
-
         self.safe_pawns() # all pawns are safe from en passant
         # piece on the target square
         target_piece = Chess.all_squares.get(destination).piece
@@ -1839,7 +1837,7 @@ class Chess(object):
         if "pawn" in chosen_piece.type: # if this piece is a pawn
             # and it was allowed to move 2 squares
             if int(destination[1]) - int(chosen_piece.location[1]) \
-            in range(-2,3,4):
+            in (-2,2):
                 chosen_piece.vulnerable = True # it's vulnerable
             # the piece on the square behind the pawn
             behind = Chess.all_squares.get(destination[0] +
@@ -1885,18 +1883,25 @@ class Chess(object):
             if self.white_king.location == "88": # if it was the white king
                 self.game_end("Black") # end the game with black winner
 
-        self.check_castles() # check the castle buttons
+        #if not self.replaying:
+        #    self.check_castles() # check the castle buttons
         Chess.all_squares.get(destination).piece = target_piece \
         = chosen_piece # put chosen piece into target and destination pieces
         # original location is now empty
         Chess.all_squares.get(original_location).piece = None
         # set the chosen piece's location to the destination
         chosen_piece.location = destination
-        self.refresh_images() # refresh the images
+        #if not self.replaying:
+        #    self.check_castles()
+        #    self.refresh_images() # refresh the images
         if self.player is self.white_player: # if it was white's turn
             self.player = self.black_player # now it's black's
         else: # if it was black's turn
             self.player = self.white_player # now it's white's
+        if not self.replaying:
+            self.refresh_highlighting()
+            self.check_castles()
+            self.refresh_images()
         if self.black_king.location != "88" and self.white_king.location \
         != "88": # if the game continues
             if self.player.mode == "click": # if it's click mode
@@ -1904,6 +1909,33 @@ class Chess(object):
             else: # otherwise
                 self.board.bind("<Button-1>", self.click_hold) # bind drag
 
+    def refresh_highlighting(self):
+        """
+        Resets the squares to their original colors, sets the proper message for
+        whose turn it is, then highlights the most last move (if applicable).
+        """
+        for row in range(8): # go by row
+            for column in range(8): # and column
+                if (row+column)%2 == 0: # and every other square
+                    color = self.light_square_color # should be white
+                else:
+                    color = self.dark_square_color # or black
+                # recolor the board
+                self.board.itemconfig(self.squares[row][column], fill=color)
+        if self.player is self.white_player: # if white to go
+            color = "dark" # 'dark' color prefix
+            self.status_message.config(text = "White's turn.") # announce white
+        else: # if black to go
+            color = "" # no color prefix
+            self.status_message.config(text = "Black's turn.") # announce black
+        if self.last_source != None and self.chosen_piece != None:
+            # color the last source with a variety of blue
+            self.board.itemconfig(self.squares[int(self.last_source[0])]
+                [int(self.last_source[1])], fill=color+"blue")
+            # color the last target with a variety of green
+            self.board.itemconfig(self.squares[int(self.last_target[0])]
+                [int(self.last_target[1])], fill=color+"green")
+        
     def game_end(self, winner):
         """
         Handles end-of-game actions, including messages, event unbindings,
@@ -1913,20 +1945,19 @@ class Chess(object):
         """
         self.status_message.config(text = winner + " wins!") # announce the win
         self.board.unbind("<Button-1>") # unbind the mouse
-        # disable the castle buttons
-        self.castle_black_left_button.config(state=DISABLED)
-        self.castle_black_right_button.config(state=DISABLED)
-        self.castle_white_left_button.config(state=DISABLED)
-        self.castle_white_right_button.config(state=DISABLED)
+        self.castlemenu.entryconfig(0, state=DISABLED)
+        self.castlemenu.entryconfig(1, state=DISABLED)
+        self.castlemenu.entryconfig(3, state=DISABLED)
+        self.castlemenu.entryconfig(4, state=DISABLED)
         if self.audio: # if audio is on
-            mixer.music.load(self.sound_folder + "torpedo.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "torpedo.ogg"))
             mixer.music.play() # fire torpedo
             time.sleep(1) # wait 1sec
             mixer.music.play() # fire again
             time.sleep(1) # wait 1sec
             mixer.music.play() # and again
             time.sleep(1) # wait 1sec
-            mixer.music.load(self.sound_folder + "explosion.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "explosion.ogg"))
             mixer.music.play() # play explosion sound
 
     def safe_pawns(self):
@@ -1959,14 +1990,20 @@ class Chess(object):
         """
         Castles at black queenside.
         """
+        if not self.replaying: # only do these things during actual play - not during replays
+            self.movelist = self.movelist[:self.replaycounter]
+            # write the move in the movelist
+            self.movelist.append("bl")
+            self.unsaved_changes = True # note that there are unsaved changes to this game
+            self.replaycounter += 1
         self.safe_pawns() # sets the current player's pawns to safe
         # color the board with black and white squares
         for row in range(8):
             for column in range(8):
                 if (row+column)%2 == 0:
-                    color = 'white'
+                    color = self.light_square_color
                 else:
-                    color = 'black'
+                    color = self.dark_square_color
                 self.board.itemconfig(self.squares[row][column], fill=color)
         # hard-coded last-move indicator, since this is a hard-coded move
         self.board.itemconfig(self.squares[3][0], fill="darkblue")
@@ -1987,21 +2024,27 @@ class Chess(object):
         self.status_message.config(text = "Black castled queenside! " + \
         "White's turn.") # announce the event
         if self.audio: # if audio is on
-            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "castle.ogg"))
             mixer.music.play() # play the 'castle' sound
 
     def castle_black_right(self):
         """
         Castles at black kingside.
         """
+        if not self.replaying: # only do these things during actual play - not during replays
+            self.movelist = self.movelist[:self.replaycounter]
+            # write the move in the movelist
+            self.movelist.append("br")
+            self.unsaved_changes = True # note that there are unsaved changes to this game
+            self.replaycounter += 1
         self.safe_pawns() # sets the current player's pawns to safe
         # color the board with black and white squares
         for row in range(8):
             for column in range(8):
                 if (row+column)%2 == 0:
-                    color = 'white'
+                    color = self.light_square_color
                 else:
-                    color = 'black'
+                    color = self.dark_square_color
                 self.board.itemconfig(self.squares[row][column], fill=color)
         # hard-coded last-move indicator, since this is a hard-coded move
         self.board.itemconfig(self.squares[5][0], fill="darkblue")
@@ -2022,21 +2065,27 @@ class Chess(object):
         self.status_message.config(text = "Black castled kingside! " + \
         "White's turn.") # announce the event
         if self.audio: # if audio is on
-            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "castle.ogg"))
             mixer.music.play() # play the 'castle' sound
 
     def castle_white_left(self):
         """
         Castles at white queenside.
         """
+        if not self.replaying:
+            self.movelist = self.movelist[:self.replaycounter]
+            # write the move in the movelist
+            self.movelist.append("wl")
+            self.unsaved_changes = True # note that there are unsaved changes to this game
+            self.replaycounter += 1
         self.safe_pawns() # sets the current player's pawns to safe
         # color the board with black and white squares
         for row in range(8):
             for column in range(8):
                 if (row+column)%2 == 0:
-                    color = 'white'
+                    color = self.light_square_color
                 else:
-                    color = 'black'
+                    color = self.dark_square_color
                 self.board.itemconfig(self.squares[row][column], fill=color)
         # hard-coded last-move indicator, since this is a hard-coded move
         self.board.itemconfig(self.squares[3][7], fill="blue")
@@ -2056,29 +2105,37 @@ class Chess(object):
         self.refresh_images() # as well as the piece icons
         if self.audio: # if audio is on
             delay = 2000 # set a 2000ms delay
-            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "castle.ogg"))
             mixer.music.play() # and play the 'castle' sound
         else: # if audio is off
             delay = 0 # set a delay of 0
-        if self.mode == "easy": # if it's on easy mode
-            self.parent.after(delay,self.easy_move) # AI makes an easy move
-        if self.mode == "hard": # if it's on hard mode
-            self.parent.after(delay,self.hard_move) # AI makes a hard move
-        self.status_message.config(text = "White castled queenside! " + \
+        if not self.replaying: # only do these things during actual play - not during replays
+            if self.mode == "easy": # if it's on easy mode
+                self.parent.after(delay,self.easy_move) # AI makes an easy move
+            if self.mode == "hard": # if it's on hard mode
+                self.parent.after(delay,self.hard_move) # AI makes a hard move
+        self.status_message.config(text = "White castled kingside! " + \
         "Black's turn.") # announce the event
 
     def castle_white_right(self):
         """
         Castles at white kingside.
         """
+        # truncate and write the move in the movelist
+        if not self.replaying: # only do these things during actual play - not during replays
+            self.movelist = self.movelist[:self.replaycounter]
+            self.unsaved_changes = True
+            self.movelist.append("wr")
+            self.replaycounter += 1
+        
         self.safe_pawns() # sets the current player's pawns to safe
         # color the board with black and white squares
         for row in range(8):
             for column in range(8):
                 if (row+column)%2 == 0:
-                    color = 'white'
+                    color = self.light_square_color
                 else:
-                    color = 'black'
+                    color = self.dark_square_color
                 self.board.itemconfig(self.squares[row][column], fill=color)
         # hard-coded last-move indicator, since this is a hard-coded move
         self.board.itemconfig(self.squares[5][7], fill="blue")
@@ -2098,14 +2155,15 @@ class Chess(object):
         self.refresh_images() # as well as the piece icons
         if self.audio: # if audio is on
             delay = 2000 # set a 2000ms delay
-            mixer.music.load(self.sound_folder + "castle.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "castle.ogg"))
             mixer.music.play() # and play the 'castle' sound
         else: # if audio is off
             delay = 0 # set a delay of 0
-        if self.mode == "easy": # if it's on easy mode
-            self.parent.after(delay,self.easy_move) # AI makes an easy move
-        if self.mode == "hard": # if it's on hard mode
-            self.parent.after(delay,self.hard_move) # AI makes a hard move
+        if not self.replaying: # only do these things during actual play - not during replays
+            if self.mode == "easy": # if it's on easy mode
+                self.parent.after(delay,self.easy_move) # AI makes an easy move
+            if self.mode == "hard": # if it's on hard mode
+                self.parent.after(delay,self.hard_move) # AI makes a hard move
         self.status_message.config(text = "White castled kingside! " + \
         "Black's turn.") # announce the event
 
@@ -2136,8 +2194,6 @@ class Chess(object):
         """
         if self.black_player.mode == "click": # if the player is in click mode
             self.black_player.mode = "drag" # switch to drag mode
-            # label the button to reflect the change
-            self.black_click_button.config(text = "Active mode:\nclick/drag")
             # if it's their turn and the game isn't over
             if self.player is self.black_player and \
             self.black_king.location != "88" and \
@@ -2148,17 +2204,18 @@ class Chess(object):
 
         else: # if the player is in drag mode
             self.black_player.mode = "click" # switch to click mode
-            # label the button to reflect the change
-            self.black_click_button.config(text = "Active mode:\nclick/click")
             # if it's their turn and the game isn't over
             if self.player is self.black_player and \
             self.black_king.location != "88" and \
             self.white_king.location != "88":
                 # bind click_click() to the mouse button
                 self.board.bind("<Button-1>", self.click_click)
-
+        
+        messagebox.showinfo(title="UI mode changed", message="Black UI mode is now click/" + \
+        self.black_player.mode + ".") # alert the user that the UI mode changed
+        
         if self.audio: # if audio is on
-            mixer.music.load(self.sound_folder + "ui_toggle.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "ui_toggle.ogg"))
             mixer.music.play() # play the 'ui_toggle' sound
 
     def white_ui_toggle(self):
@@ -2168,8 +2225,6 @@ class Chess(object):
         """
         if self.white_player.mode is "click": # if the player is in click mode
             self.white_player.mode = "drag" # switch to drag mode
-            # label the button to reflect the change
-            self.white_click_button.config(text = "Active mode:\nclick/drag")
             # if it's their turn and the game isn't over
             if self.player is self.white_player and \
             self.black_king.location != "88" and \
@@ -2180,8 +2235,6 @@ class Chess(object):
 
         else: # if the player is in drag mode
             self.white_player.mode = "click" # switch to click mode
-            # label the button to reflect the change
-            self.white_click_button.config(text = "Active mode:\nclick/click")
             # if it's their turn and the game isn't over
             if self.player is self.white_player and \
             self.black_king.location != "88" and \
@@ -2189,36 +2242,65 @@ class Chess(object):
                 # bind click_click() to the mouse button
                 self.board.bind("<Button-1>", self.click_click)
 
+        messagebox.showinfo(title="UI mode changed", message="White UI mode is now click/" + \
+        self.white_player.mode + ".") # alert the user that the UI mode changed
+        
         if self.audio: # if audio is on
-            mixer.music.load(self.sound_folder + "ui_toggle.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "ui_toggle.ogg"))
             mixer.music.play() # play the 'ui_toggle' sound
 
-    def audio_toggle(self, event):
+    def audio_toggle(self, *args):
         """
         Switches between audio mode and silent mode, with a message.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            *args: may or may not include an event
         """
         if self.audio: # if audio is on
             self.audio = False # turn it off
             mixer.music.stop() # stop all sounds
             # and announce such
-            self.status_message.config(text = "Audio deactivated.")
+            messagebox.showinfo(title="Audio", message="Audio deactivated.")
         else: # otherwise
             self.audio = True # turn it on
-            mixer.music.load(self.sound_folder + "audio_on.ogg")
+            mixer.music.load(os.path.join(self.sound_folder, "audio_on.ogg"))
             mixer.music.play() # play the 'audio_on' sound
             # and announce such
-            self.status_message.config(text = "Audio activated.")
+            messagebox.showinfo(title="Audio", message="Audio activated.")
 
-    def audio_from_folder(self, event):
+    def set_square_color(self, *args):
+        """
+        Sets the color of light or dark squares.
+        Parameters:
+            *args:
+                [0] should be squaretype, 'light' or 'dark'
+                [1] may or may not exist, to preselect a color (for argv use)
+        """
+        squaretype = args[0]
+        if len(args) > 1: # if there are multiple arguments
+            temp = args[1] # we'll have been passed squaretype and a valid color like 'blue'
+        else:
+            temp = colorchooser.askcolor()[1] # if not, pop a chooser
+        if temp: # if a color was chosen
+            if squaretype=="light": # change the light squares'
+                self.light_square_color = temp # color
+            else: # change the dark squares'
+                self.dark_square_color = temp # color
+            if len(self.movelist) == 0: # if we're at the beginning of the match
+                try:
+                    self.board.destroy() # destroy the board if it's there
+                except:
+                    pass # if not, fine
+                self.draw_board() # draw it
+            else: # if there are moves,
+                self.replaycounter +=1 # increment the replay counter
+                self.step_back() # and go 'back' to there
+    
+    def audio_from_folder(self, *args):
         """
         Attempts to load audio from a specified folder. If that fails, attempts
         to load audio from the previous folder.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            *args: may or may not include an event
         """
         try:
             # initialize the mixer, since the user might have started the game
@@ -2228,137 +2310,86 @@ class Chess(object):
             # save the previous folder, just in case
             previous_sound = self.sound_folder
             try: # let's try the entered folder
-                self.sound_folder = self.text_box.get() + "/" # get the name
-                # and try everything
-                mixer.music.load(self.sound_folder + "ui_toggle.ogg")
-                mixer.music.load(self.sound_folder + "audio_on.ogg")
-                mixer.music.load(self.sound_folder + "select_piece.ogg")
-                mixer.music.load(self.sound_folder + "move_piece.ogg")
-                mixer.music.load(self.sound_folder + "computer_move.ogg")
-                mixer.music.load(self.sound_folder + "castle.ogg")
-                mixer.music.load(self.sound_folder + "undo.ogg")
-                mixer.music.load(self.sound_folder + "torpedo.ogg")
-                mixer.music.load(self.sound_folder + "explosion.ogg")
-                mixer.music.load(self.sound_folder + "game_start.ogg")
-                self.status_message.config(text = "Audio loaded from " + \
-                "entered sound folder.") # success message
+                temp = filedialog.askdirectory() # ask for a directory
+                if not temp: # if they canceled,
+                    return # we're done
+                self.sound_folder = temp # get the name
+                for file in self.sound_filenames:
+                    mixer.music.load(os.path.join(self.sound_folder, file))
+                messagebox.showinfo(title="Audio", message="Audio loaded from: " + self.sound_folder) # success message
             except: # entered folder was no good
-                # failure message
-                self.status_message.config(text = "Unable to load audio" + \
-                "from entered sound folder (absent or corrupted).")
+                messagebox.showerror(title="Audio", message="Unable to load audio " + \
+                "from entered sound folder (absent or corrupted).") # failure message
                 # now try the previous sound folder. We don't need to try the
                 # default folder because either the previous one was fine or
                 # the default was attempted already.
-                self.sound_folder = previous_sound + "/"
-                mixer.music.load(self.sound_folder + "ui_toggle.ogg")
-                mixer.music.load(self.sound_folder + "audio_on.ogg")
-                mixer.music.load(self.sound_folder + "select_piece.ogg")
-                mixer.music.load(self.sound_folder + "move_piece.ogg")
-                mixer.music.load(self.sound_folder + "computer_move.ogg")
-                mixer.music.load(self.sound_folder + "castle.ogg")
-                mixer.music.load(self.sound_folder + "undo.ogg")
-                mixer.music.load(self.sound_folder + "torpedo.ogg")
-                mixer.music.load(self.sound_folder + "explosion.ogg")
-                mixer.music.load(self.sound_folder + "game_start.ogg")
+                self.sound_folder = previous_sound
+                for file in self.sound_filenames:
+                    mixer.music.load(os.path.join(self.sound_folder, "ui_toggle.ogg"))
             # success, with some sort of audio. Bind the audio hotkey.
             self.parent.bind("<Control-a>", self.audio_toggle)
             self.parent.bind("<Control-A>", self.audio_toggle)
+            self.audiomenu.entryconfig(0, state=NORMAL)
         except: # audio failed
             self.audio = False # turn off audio
+            self.audiomenu.entryconfig(0, state=DISABLED)
             # inform the user of what happened
-            self.status_message.config(text = "Unable to load audio. " + \
-                "Either the entered sound folder, previous sound folder,\n" + \
+            messagebox.showerror(title="Error", message="Unable to load audio. " + \
+                "Either the entered sound folder, previous sound folder, " + \
                 "and default sound folder are absent or corrupted, " + \
                 "or pygame is not installed.")
 
-    def icons_from_folder(self, event):
+    def icons_from_folder(self, *args):
         """
         Attempts to load icons from a specified folder. If that fails, attempts
         to load icons from the previous folder.
         Parameter:
-            event (sequence): data describing the input. In this case, it's
-            just the keyboard input used to access this method.
+            *args: may or may not include an event
         """
-        try: # first we'll try the specified folder
-            # save the previous one, just in case
-            previous_icons = self.icon_folder
-            icon_folder = self.text_box.get() + "/" # get the name
-            # and try everything
-            self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
-            self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
-            self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
-            self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
-            self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
-            self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
-
-            self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
-            self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
-            self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
-            self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
-            self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
-            self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
-
-            self.transparent_square_gif = \
-            PhotoImage(file=icon_folder+"transparent_square.gif")
-
-            self.status_message.config(text = "Icons loaded from " + \
-            "entered image folder.") # success message
-        except: # entered folder was no good
-            # failure message
-            self.status_message.config(text = "Unable to load icons" + \
-            "from entered image folder (absent or corrupted).")
-            # now try the previous folder. Although this is guaranteed to work
-            # because the game auto-exits if it can't find images, we still
-            # need to go through everything to make sure that all the pieces
-            # are displaying images from a single, intact folder.
-            icon_folder = previous_icons + "/"
-            self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
-            self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
-            self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
-            self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
-            self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
-            self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
-
-            self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
-            self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
-            self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
-            self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
-            self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
-            self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
-
-            self.transparent_square_gif = \
-            PhotoImage(file=icon_folder+"transparent_square.gif")
-
-        # put the loaded images into the piece_pics set
-        self.piece_pics = {"black_king":self.black_king_gif,
-        "black_queen":self.black_queen_gif, "black_rook":self.black_rook_gif,
-        "black_bishop":self.black_bishop_gif, \
-        "black_knight":self.black_knight_gif,
-        "black_pawn":self.black_pawn_gif, "white_king":self.white_king_gif,
-        "white_queen":self.white_queen_gif, "white_rook":self.white_rook_gif,
-        "white_bishop":self.white_bishop_gif, \
-        "white_knight":self.white_knight_gif,
-        "white_pawn":self.white_pawn_gif,
-        "transparent_square":self.transparent_square_gif}
-
-        self.icon_folder = icon_folder # save this as the current icon folder
-        self.refresh_images() # refresh the piece images
-
+        dir = filedialog.askdirectory()
+        if not dir:
+            return
+        try:
+            self.load_icons(dir)
+        except:
+            self.load_icons(self.icon_folder)
+            messagebox.showerror(title="Error", message="Couldn't load from the chosen folder. Make sure all " + \
+            "files are present and properly named.")
+        self.refresh_images()
+        
     def audio_failed(self):
         """
         Display the audio failure status message. It's in a separate method
-        so that it can be accessed with the after() method, overwriting the
-        welcome message.
+        so that it can be accessed with the after() method.
         """
         # a status message about the failure to load audio
-        self.status_message.config(text = "Audio load failed. Either " + \
+        messagebox.showerror(title="Error", message="Audio load failed. Either " + \
         "pygame is not installed, or sound folder is corrupted.")
 
-    def images_failed(self):
+    def quit(self, *args):
         """
-        If images couldn't be loaded on init, this method gets called after
-        a 30-second delay, exiting the program.
+        A quit function with a yesno prompt or yesnocancel prompt for unsaved changes.
+        Parameter:
+            *args: allows this to be called with or without an event
         """
+        try:
+            self.unsaved_changes # look at unsaved changes
+        except: # if there were none due to a failed start that prompted self.audio_failed
+            self.parent.destroy() # you can click 'x' without waiting 30sec, with no error
+            return # and return
+        if self.unsaved_changes: # if there are unsaved changes
+            # ask if they want to save
+            temp = messagebox.askyesnocancel(title="Unsaved changes", \
+            message="There are unsaved changes to your game. Save before quitting?")
+            if temp == None: # if they picked cancel
+                return # stop doing anything
+            if temp: # if they picked Yes (No would be False)
+                if not self.save_plain(): # if the user chose yes but then canceled the save
+                    return # just return
+        else: # if there are no unsaved changes, just confirm the quit
+            if not messagebox.askyesno("Quit", "Really quit?"): # if user clicks no
+                return # just return
+        
         self.parent.destroy() # destroys the tkinter window, exiting the game
 
 def main():
@@ -2366,6 +2397,6 @@ def main():
     chess = Chess(root) # Make my game inherit from that object.
     root.mainloop() # Run the main loop.
     mixer.music.stop()
-
+    
 if __name__ == '__main__':
     main()
