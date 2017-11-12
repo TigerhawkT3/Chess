@@ -11,7 +11,7 @@
 
 from tkinter import *
 from random import *
-import time
+import sys
 
 class Player(object):
     """
@@ -562,22 +562,30 @@ class Chess(object):
         self.white_player = Player("white")
         self.black_player = Player("black")
 
-        self.black_king_gif = PhotoImage(file="piece_icons/black_king.gif")
-        self.black_queen_gif = PhotoImage(file="piece_icons/black_queen.gif")
-        self.black_rook_gif = PhotoImage(file="piece_icons/black_rook.gif")
-        self.black_bishop_gif = PhotoImage(file="piece_icons/black_bishop.gif")
-        self.black_knight_gif = PhotoImage(file="piece_icons/black_knight.gif")
-        self.black_pawn_gif = PhotoImage(file="piece_icons/black_pawn.gif")
+        icon_folder = "piece_icons/"
+        if len(sys.argv) > 1:
+            icon_folder = sys.argv[1] + "/"
 
-        self.white_king_gif = PhotoImage(file="piece_icons/white_king.gif")
-        self.white_queen_gif = PhotoImage(file="piece_icons/white_queen.gif")
-        self.white_rook_gif = PhotoImage(file="piece_icons/white_rook.gif")
-        self.white_bishop_gif = PhotoImage(file="piece_icons/white_bishop.gif")
-        self.white_knight_gif = PhotoImage(file="piece_icons/white_knight.gif")
-        self.white_pawn_gif = PhotoImage(file="piece_icons/white_pawn.gif")
+        try:
+            self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
+        except:
+            icon_folder = "piece_icons/"
+            self.black_king_gif = PhotoImage(file=icon_folder+"black_king.gif")
+        self.black_queen_gif = PhotoImage(file=icon_folder+"black_queen.gif")
+        self.black_rook_gif = PhotoImage(file=icon_folder+"black_rook.gif")
+        self.black_bishop_gif = PhotoImage(file=icon_folder+"black_bishop.gif")
+        self.black_knight_gif = PhotoImage(file=icon_folder+"black_knight.gif")
+        self.black_pawn_gif = PhotoImage(file=icon_folder+"black_pawn.gif")
+
+        self.white_king_gif = PhotoImage(file=icon_folder+"white_king.gif")
+        self.white_queen_gif = PhotoImage(file=icon_folder+"white_queen.gif")
+        self.white_rook_gif = PhotoImage(file=icon_folder+"white_rook.gif")
+        self.white_bishop_gif = PhotoImage(file=icon_folder+"white_bishop.gif")
+        self.white_knight_gif = PhotoImage(file=icon_folder+"white_knight.gif")
+        self.white_pawn_gif = PhotoImage(file=icon_folder+"white_pawn.gif")
 
         self.transparent_square_gif = \
-        PhotoImage(file="piece_icons/transparent_square.gif")
+        PhotoImage(file=icon_folder+"transparent_square.gif")
 
         self.piece_pics = {"black_king":self.black_king_gif,
         "black_queen":self.black_queen_gif, "black_rook":self.black_rook_gif,
