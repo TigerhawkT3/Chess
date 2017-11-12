@@ -73,11 +73,12 @@ class Pawn(Piece):
     def __init__(self, color, location):
         super().__init__(color, location)
         self.direction = 1
-        if color is "white":
+        if color == "white":
             self.direction = -1
         self.moved = False
         self.vulnerable = False
         self.type = self.color + "_pawn"
+
     def generate_moveset(self):
         """
         Generates a moveset for this piece. Pawns can move ahead one space. If
@@ -89,12 +90,12 @@ class Pawn(Piece):
         """
         self.moveset = set()
         loc = self.location[0] + str(int(self.location[1])+self.direction)
-        if len(loc) is 2:
+        if len(loc) == 2:
             if int(loc[0]) in range(8) and int(loc[1]) in range(8):
                 if Chess.all_squares.get(loc).piece is None:
                     self.moveset.add(loc)
         loc = loc[0]+str(int(loc[1])+self.direction)
-        if len(loc) is 2:
+        if len(loc) == 2:
             if int(loc[0]) in range(8) and int(loc[1]) in range(8):
                 if not self.moved and Chess.all_squares.get(loc).piece is None \
                 and Chess.all_squares.get(loc[0]+ \
@@ -102,7 +103,7 @@ class Pawn(Piece):
                     self.moveset.add(loc)
         loc = str(int(self.location[0])-1) + \
         str(int(self.location[1])+self.direction)
-        if len(loc) is 2:
+        if len(loc) == 2:
             if int(loc[0]) in range(8) and int(loc[1]) in range(8):
                 if Chess.all_squares.get(loc).piece is not None:
                     if Chess.all_squares.get(loc).piece.color is not self.color:
@@ -119,7 +120,7 @@ class Pawn(Piece):
                                 self.moveset.add(loc)
         loc = str(int(self.location[0])+1) + \
         str(int(self.location[1])+self.direction)
-        if len(loc) is 2:
+        if len(loc) == 2:
             if int(loc[0]) in range(8) and int(loc[1]) in range(8):
                 if Chess.all_squares.get(loc).piece is not None:
                     if Chess.all_squares.get(loc).piece.color is not self.color:
@@ -199,7 +200,7 @@ class Knight(Piece):
 
         occupied = set()
         for place in self.moveset:
-            if len(place) is not 2:
+            if len(place) != 2:
                 occupied.add(place)
                 continue
             if int(place[0]) not in range(8) or int(place[1]) not in range(8):
@@ -283,7 +284,7 @@ class King(Piece):
 
         occupied = set()
         for place in self.moveset:
-            if len(place) is not 2:
+            if len(place) != 2:
                 occupied.add(place)
                 continue
             if int(place[0]) not in range(8) or int(place[1]) not in range(8):
@@ -379,7 +380,8 @@ class Chess(object):
             white queenside castling, if legal
         castle_white_right_button (Button): a tkinter Button that performs the
             white kingside castling, if legal
-        mode (string): "easy" for AI play, "human" for 2P matches
+        mode (string): "easy" for easy AI play, "hard" for hard AI play, and
+            "human" for 2P matches
         status_message (Label): a tkinter Label that displays the appropriate
             message when a player wins
         white_player (Player): a Player object, using the white pieces
@@ -457,6 +459,7 @@ class Chess(object):
         white_rook_2 (Rook): the kingside white rook
         extra_white_queens (list): a list with cells that point to the extra
             queens that white can unlock via pawn promotion
+        all_pieces (list): a list that points to each piece
         square_overlay (list): a 2D list that refers to each image that rests
             on a square. Squares with no piece have a transparent image, and
             squares with a piece have an image of that piece. This list is
@@ -483,6 +486,7 @@ class Chess(object):
     def __init__(self, parent):
 
         parent.title("Chess") # title for the window
+        self.parent = parent
 
         # Here's the frame:
         self.frame = Frame(parent)
@@ -526,7 +530,7 @@ class Chess(object):
 
         # Status message. When the game ends, the result is described here.
         self.status_message = Label(self.frame, text = "")
-        self.status_message.grid(row=4, column = 1)
+        self.status_message.grid(row=4, column = 0, columnspan=3)
 
         # Create the two players, white and black.
         self.white_player = Player("white")
@@ -665,6 +669,26 @@ class Chess(object):
         Chess.all_squares.get("67").piece = self.white_knight_2
         Chess.all_squares.get("77").piece = self.white_rook_2
 
+        self.all_pieces = [self.black_rook_1, self.black_knight_1,
+        self.black_bishop_1, self.black_queen, self.black_king,
+        self.black_bishop_2, self.black_knight_2, self.black_rook_2,
+        self.black_pawn_1, self.black_pawn_2, self.black_pawn_3,
+        self.black_pawn_4, self.black_pawn_5, self.black_pawn_6,
+        self.black_pawn_7, self.black_pawn_8]
+
+        for i in range(8):
+            self.all_pieces.append(self.extra_black_queens[i])
+
+        self.all_pieces += [self.white_pawn_1, self.white_pawn_2, self.white_pawn_3,
+        self.white_pawn_4, self.white_pawn_5, self.white_pawn_6,
+        self.white_pawn_7, self.white_pawn_8, self.white_rook_1,
+        self.white_knight_1, self.white_bishop_1, self.white_queen,
+        self.white_king, self.white_bishop_2, self.white_knight_2,
+        self.white_rook_2]
+
+        for i in range(8):
+            self.all_pieces.append(self.extra_white_queens[i])
+
         self.square_overlay = []
         for row in range(8):
             self.square_overlay.append([])
@@ -682,13 +706,19 @@ class Chess(object):
         self.generate_all_movesets()
 
         # Bind the left mouse button to the new board.
-        if self.white_player.mode is "click":
+        if self.white_player.mode == "click":
             self.board.bind("<Button-1>", self.click_click)
         else:
             self.board.bind("<Button-1>", self.click_hold)
 
+        self.parent.bind("e", self.easy_step)
+        self.parent.bind("h", self.hard_step)
+        self.parent.bind("s", self.save)
+        self.parent.bind("l", self.load)
+
         # Set a status message - blank for now.
-        self.status_message.config(text = "")
+        self.status_message.config(text = "(S)ave | (L)oad | " + \
+        "(E)asy manual AI move | (H)ard manual AI move")
 
         # Make sure the first player is white.
         self.player = self.white_player
@@ -704,6 +734,208 @@ class Chess(object):
 
         self.last_ai_piece = self.black_king
 
+    def easy_step(self, event):
+        """
+        If it's currently black's turn, this tells the easy AI to make one move.
+        """
+        if self.player is self.black_player and \
+        self.black_king.location != "88" \
+        and self.white_king.location != "88":
+            self.easy_move()
+            self.status_message.config(text = "Easy AI moved for Black! " + \
+            "White's turn.")
+        else:
+            self.status_message.config(text = "It must be Black's " + \
+            "turn for that.")
+
+    def hard_step(self, event):
+        """
+        If it's currently black's turn, this tells the hard AI to make one move.
+        """
+        if self.player is self.black_player and \
+        self.black_king.location != "88" \
+        and self.white_king.location != "88":
+            self.hard_move()
+            self.status_message.config(text = "Hard AI moved for Black! " + \
+            "White's turn.")
+        else:
+            self.status_message.config(text = "It must be Black's " + \
+            "turn for that.")
+
+    def save(self, event):
+        """
+        Saves the current game state to a file called "savechess.txt" in the
+        current working directory. Click/drag UI options are included.
+        """
+        savelist = []
+
+        savelist.append(self.player.color)
+        savelist.append(self.black_player.mode)
+        savelist.append(self.black_promotions)
+        savelist.append(self.white_player.mode)
+        savelist.append(self.white_promotions)
+
+        for piece in range(48):
+            savelist.append(self.all_pieces[piece].location)
+
+        savelist.append(self.black_pawn_1.moved)
+        savelist.append(self.black_pawn_1.vulnerable)
+        savelist.append(self.black_pawn_2.moved)
+        savelist.append(self.black_pawn_2.vulnerable)
+        savelist.append(self.black_pawn_3.moved)
+        savelist.append(self.black_pawn_3.vulnerable)
+        savelist.append(self.black_pawn_4.moved)
+        savelist.append(self.black_pawn_4.vulnerable)
+        savelist.append(self.black_pawn_5.moved)
+        savelist.append(self.black_pawn_5.vulnerable)
+        savelist.append(self.black_pawn_6.moved)
+        savelist.append(self.black_pawn_6.vulnerable)
+        savelist.append(self.black_pawn_7.moved)
+        savelist.append(self.black_pawn_7.vulnerable)
+        savelist.append(self.black_pawn_8.moved)
+        savelist.append(self.black_pawn_8.vulnerable)
+
+        savelist.append(self.white_pawn_1.moved)
+        savelist.append(self.white_pawn_1.vulnerable)
+        savelist.append(self.white_pawn_2.moved)
+        savelist.append(self.white_pawn_2.vulnerable)
+        savelist.append(self.white_pawn_3.moved)
+        savelist.append(self.white_pawn_3.vulnerable)
+        savelist.append(self.white_pawn_4.moved)
+        savelist.append(self.white_pawn_4.vulnerable)
+        savelist.append(self.white_pawn_5.moved)
+        savelist.append(self.white_pawn_5.vulnerable)
+        savelist.append(self.white_pawn_6.moved)
+        savelist.append(self.white_pawn_6.vulnerable)
+        savelist.append(self.white_pawn_7.moved)
+        savelist.append(self.white_pawn_7.vulnerable)
+        savelist.append(self.white_pawn_8.moved)
+        savelist.append(self.white_pawn_8.vulnerable)
+
+        savelist.append(self.black_rook_1.moved)
+        savelist.append(self.black_rook_2.moved)
+        savelist.append(self.black_king.moved)
+        savelist.append(self.white_rook_1.moved)
+        savelist.append(self.white_rook_2.moved)
+        savelist.append(self.white_king.moved)
+
+        savelist.append(self.mode)
+
+        try:
+            with open("savechess.txt", 'w', encoding = 'utf-8-sig') as output:
+                for item in savelist:
+                    output.write(str(item) + "\n")
+        except:
+            self.status_message.config(text = "Error saving file.")
+        else:
+            self.status_message.config(text = "File saved as savechess.txt" + \
+            " to current directory.")
+
+    def load(self, event):
+        """
+        Looks in the current working directory for a file called
+        "savechess.txt". If it exists, its data are used to restore a save
+        state. Click/drag UI options are included.
+        """
+        savelist = []
+        try:
+            with open('savechess.txt', 'r', encoding = 'utf-8-sig') as file:
+                for line in file:
+                    savelist.append(line[:-1])
+        except:
+            self.status_message.config(text = "Save file not found.")
+            return
+
+        if savelist[-1] == "easy":
+            self.new_easy()
+        elif savelist[-1] == "hard":
+            self.new_hard()
+        else:
+            self.new_human()
+
+        Chess.all_squares = {str(row)+str(column):Square(str(row)+str(column))
+            for row in range(8) for column in range(8)}
+
+        if savelist[0] == "black":
+            self.player = self.black_player
+        else:
+            self.player = self.white_player
+        if self.black_player.mode != savelist[1]:
+            self.black_ui_toggle()
+        self.black_player.mode = savelist[1]
+        self.black_promotions = int(savelist[2])
+        if self.white_player.mode != savelist[3]:
+            self.white_ui_toggle()
+        self.white_player.mode = savelist[3]
+        self.white_promotions = int(savelist[4])
+
+        for piece in range(48):
+            self.all_pieces[piece].location = savelist[piece+5]
+            if self.all_pieces[piece].location != "88":
+                Chess.all_squares.get(savelist[piece+5]).piece = \
+                self.all_pieces[piece]
+
+        self.black_pawn_1.moved = (savelist[53] == "True")
+        self.black_pawn_1.vulnerable = (savelist[54] == "True")
+        self.black_pawn_2.moved = (savelist[55] == "True")
+        self.black_pawn_2.vulnerable = (savelist[56] == "True")
+        self.black_pawn_3.moved = (savelist[57] == "True")
+        self.black_pawn_3.vulnerable = (savelist[58] == "True")
+        self.black_pawn_4.moved = (savelist[59] == "True")
+        self.black_pawn_4.vulnerable = (savelist[60] == "True")
+        self.black_pawn_5.moved = (savelist[61] == "True")
+        self.black_pawn_5.vulnerable = (savelist[62] == "True")
+        self.black_pawn_6.moved = (savelist[63] == "True")
+        self.black_pawn_6.vulnerable = (savelist[64] == "True")
+        self.black_pawn_7.moved = (savelist[65] == "True")
+        self.black_pawn_7.vulnerable = (savelist[66] == "True")
+        self.black_pawn_8.moved = (savelist[67] == "True")
+        self.black_pawn_8.vulnerable = (savelist[68] == "True")
+
+        self.white_pawn_1.moved = (savelist[69] == "True")
+        self.white_pawn_1.vulnerable = (savelist[70] == "True")
+        self.white_pawn_2.moved = (savelist[71] == "True")
+        self.white_pawn_2.vulnerable = (savelist[72] == "True")
+        self.white_pawn_3.moved = (savelist[73] == "True")
+        self.white_pawn_3.vulnerable = (savelist[74] == "True")
+        self.white_pawn_4.moved = (savelist[75] == "True")
+        self.white_pawn_4.vulnerable = (savelist[76] == "True")
+        self.white_pawn_5.moved = (savelist[77] == "True")
+        self.white_pawn_5.vulnerable = (savelist[78] == "True")
+        self.white_pawn_6.moved = (savelist[79] == "True")
+        self.white_pawn_6.vulnerable = (savelist[80] == "True")
+        self.white_pawn_7.moved = (savelist[81] == "True")
+        self.white_pawn_7.vulnerable = (savelist[82] == "True")
+        self.white_pawn_8.moved = (savelist[83] == "True")
+        self.white_pawn_8.vulnerable = (savelist[84] == "True")
+
+        self.black_rook_1.moved = (savelist[85] == "True")
+        self.black_rook_2.moved = (savelist[86] == "True")
+        self.black_king.moved = (savelist[87] == "True")
+        self.white_rook_1.moved = (savelist[88] == "True")
+        self.white_rook_2.moved = (savelist[89] == "True")
+        self.white_king.moved = (savelist[90] == "True")
+
+        if self.player.mode == "click":
+            self.board.bind("<Button-1>", self.click_click)
+        else:
+            self.board.bind("<Button-1>", self.click_hold)
+
+        if self.player is self.black_player:
+            self.status_message.config(text = "File loaded! Black's turn.")
+        else:
+            self.status_message.config(text = "File loaded! White's turn.")
+
+        if self.black_king.location == "88":
+            self.board.unbind("<Button-1>")
+            self.status_message.config(text = "White wins!")
+        if self.white_king.location == "88":
+            self.board.unbind("<Button-1>")
+            self.status_message.config(text = "Black wins!")
+
+        self.check_castles()
+        self.refresh_images()
+
     def check_castles(self):
         """
         Checks if anyone can castle, then makes the appropriate buttons
@@ -713,8 +945,8 @@ class Chess(object):
         # and king haven't moved, enable. else, disable. if the game is over,
         # the buttons are disabled in move().
         if(not self.black_rook_1.moved and not self.black_king.moved and
-        self.black_king.location is not "88" and \
-        self.white_king.location is not "88" and
+        self.black_king.location != "88" and \
+        self.white_king.location != "88" and
         Chess.all_squares.get("10").piece is None and
         Chess.all_squares.get("20").piece is None and
         Chess.all_squares.get("30").piece is None):
@@ -722,8 +954,8 @@ class Chess(object):
         else:
             self.castle_black_left_button.config(state=DISABLED)
         if(not self.black_rook_2.moved and not self.black_king.moved and
-        self.black_king.location is not "88" and \
-        self.white_king.location is not "88" and
+        self.black_king.location != "88" and \
+        self.white_king.location != "88" and
         self.player is self.black_player and
         Chess.all_squares.get("50").piece is None and
         Chess.all_squares.get("60").piece is None):
@@ -731,8 +963,8 @@ class Chess(object):
         else:
             self.castle_black_right_button.config(state=DISABLED)
         if(not self.white_rook_1.moved and not self.white_king.moved and
-        self.black_king.location is not "88" and \
-        self.white_king.location is not "88" and
+        self.black_king.location != "88" and \
+        self.white_king.location != "88" and
         self.player is self.white_player and
         Chess.all_squares.get("17").piece is None and
         Chess.all_squares.get("27").piece is None and
@@ -741,8 +973,8 @@ class Chess(object):
         else:
             self.castle_white_left_button.config(state=DISABLED)
         if(not self.white_rook_2.moved and not self.white_king.moved and
-        self.black_king.location is not "88" and \
-        self.white_king.location is not "88" and
+        self.black_king.location != "88" and \
+        self.white_king.location != "88" and
         self.player is self.white_player and
         Chess.all_squares.get("57").piece is None and
         Chess.all_squares.get("67").piece is None):
@@ -862,7 +1094,7 @@ class Chess(object):
         dead_pieces = set()
         self.generate_all_movesets()
         for piece in living_pieces:
-            if piece.location is "88" or len(piece.moveset) is 0:
+            if piece.location == "88" or len(piece.moveset) == 0:
                 dead_pieces.add(piece)
         living_pieces -= dead_pieces
 
@@ -900,7 +1132,7 @@ class Chess(object):
         dead_pieces = set()
         self.generate_all_movesets()
         for piece in living_pieces:
-            if piece.location is "88" or len(piece.moveset) is 0:
+            if piece.location == "88" or len(piece.moveset) == 0:
                 dead_pieces.add(piece)
         living_pieces -= dead_pieces
 
@@ -918,7 +1150,7 @@ class Chess(object):
 
         dead_enemies = set()
         for piece in enemy_pieces:
-            if piece.location is "88" or len(piece.moveset) is 0:
+            if piece.location == "88" or len(piece.moveset) == 0:
                 dead_enemies.add(piece)
         enemy_pieces -= dead_enemies
 
@@ -942,7 +1174,7 @@ class Chess(object):
         enemy_moves, self.black_king, self.white_king)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_king":
+            piece_to_move.type != "black_king":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -950,7 +1182,7 @@ class Chess(object):
         enemy_moves, self.black_knight_1, self.white_knight_1)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_knight":
+            piece_to_move.type != "black_knight":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -958,7 +1190,7 @@ class Chess(object):
         enemy_moves, self.black_knight_2, self.white_knight_2)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_knight":
+            piece_to_move.type != "black_knight":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -966,7 +1198,7 @@ class Chess(object):
         enemy_moves, self.black_bishop_1, self.white_bishop_1)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_bishop":
+            piece_to_move.type != "black_bishop":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -974,7 +1206,7 @@ class Chess(object):
         enemy_moves, self.black_bishop_2, self.white_bishop_2)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_bishop":
+            piece_to_move.type != "black_bishop":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -982,7 +1214,7 @@ class Chess(object):
         enemy_moves, self.black_rook_1, self.white_rook_1)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_rook":
+            piece_to_move.type != "black_rook":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -990,7 +1222,7 @@ class Chess(object):
         enemy_moves, self.black_rook_2, self.white_rook_2)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_rook":
+            piece_to_move.type != "black_rook":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -998,7 +1230,7 @@ class Chess(object):
         enemy_moves, self.black_queen, self.white_queen)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_queen":
+            piece_to_move.type != "black_queen":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -1006,7 +1238,7 @@ class Chess(object):
         enemy_moves, self.extra_black_queens[1], self.extra_white_queens[1])
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_queen":
+            piece_to_move.type != "black_queen":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -1014,7 +1246,7 @@ class Chess(object):
         enemy_moves, self.black_king, self.white_king)
         if decision[0]:
             if decision[1] or Chess.all_squares.get(move).piece is None or \
-            piece_to_move.type is not "black_king":
+            piece_to_move.type != "black_king":
                 piece_to_move = decision[2]
                 move = decision[3]
 
@@ -1046,7 +1278,7 @@ class Chess(object):
                             return[True, True, piece, enemy.location]
             for loc in check_ally.moveset:
                 if loc not in enemy_moves:
-                    if ((check_ally is self.last_ai_piece and loc is \
+                    if ((check_ally is self.last_ai_piece and loc == \
                     self.last_source) and len(check_ally.moveset) > 1):
                         continue
                     return [True, False, check_ally, loc]
@@ -1128,11 +1360,11 @@ class Chess(object):
         """
         if token is None:
             return False
-        if token.color is not self.player.color:
+        if token.color != self.player.color:
             return False
         self.chosen_piece = token
         token.generate_moveset()
-        if len(token.moveset) is 0:
+        if len(token.moveset) == 0:
             return False
         if self.player is self.white_player:
             color = ""
@@ -1154,7 +1386,7 @@ class Chess(object):
         """
         for row in range(8):
             for column in range(8):
-                if (row+column)%2 is 0:
+                if (row+column)%2 == 0:
                     color = 'white'
                 else:
                     color = 'black'
@@ -1170,9 +1402,9 @@ class Chess(object):
                 [int(self.last_target[1])], fill=color+"green")
         if click in self.chosen_piece.moveset:
             self.move(self.chosen_piece, click)
-            if self.mode is "easy" and self.black_king.location is not "88":
+            if self.mode == "easy" and self.black_king.location != "88":
                 self.easy_move()
-            if self.mode is "hard" and self.black_king.location is not "88":
+            if self.mode == "hard" and self.black_king.location != "88":
                 self.hard_move()
             self.check_castles()
 
@@ -1188,7 +1420,7 @@ class Chess(object):
         if self.last_source is not None and self.last_target is not None:
             for row in range(8):
                 for column in range(8):
-                    if (row+column)%2 is 0:
+                    if (row+column)%2 == 0:
                         color = 'white'
                     else:
                         color = 'black'
@@ -1225,15 +1457,19 @@ class Chess(object):
                         Chess.all_squares.get(destination[0] +
                         str(int(destination[1])-chosen_piece.direction)) \
                         .piece = None
-            if destination[1] is "0":
+            if destination[1] == "0":
                 chosen_piece.location = "88"
+                if target_piece is not None:
+                    target_piece.location = "88"
                 target_piece = Chess.all_squares.get(destination).piece = \
                 self.extra_white_queens[self.white_promotions]
                 target_piece.location = destination
                 self.white_promotions += 1
                 chosen_piece = target_piece
-            if destination[1] is "7":
+            if destination[1] == "7":
                 chosen_piece.location = "88"
+                if target_piece is not None:
+                    target_piece.location = "88"
                 target_piece = Chess.all_squares.get(destination).piece= \
                 self.extra_black_queens[self.black_promotions]
                 target_piece.location = destination
@@ -1242,8 +1478,7 @@ class Chess(object):
         if target_piece is not None:
             Chess.all_squares.get(original_location).piece = None
             target_piece.location = "88"
-            if target_piece is self.black_king and chosen_piece is not \
-            self.black_king:
+            if self.black_king.location == "88":
                 target_piece = chosen_piece
                 self.status_message.config(text = "White wins!")
                 self.board.unbind("<Button-1>")
@@ -1251,8 +1486,7 @@ class Chess(object):
                 self.castle_black_right_button.config(state=DISABLED)
                 self.castle_white_left_button.config(state=DISABLED)
                 self.castle_white_right_button.config(state=DISABLED)
-            if target_piece is self.white_king and chosen_piece is not \
-            self.white_king:
+            if self.white_king.location == "88":
                 target_piece = chosen_piece
                 self.status_message.config(text = "Black wins!")
                 self.board.unbind("<Button-1>")
@@ -1272,9 +1506,9 @@ class Chess(object):
             self.player = self.black_player
         else:
             self.player = self.white_player
-        if self.black_king.location is not "88" and self.white_king.location \
-        is not "88":
-            if self.player.mode is "click":
+        if self.black_king.location != "88" and self.white_king.location \
+        != "88":
+            if self.player.mode == "click":
                 self.board.bind("<Button-1>", self.click_click)
             else:
                 self.board.bind("<Button-1>", self.click_hold)
@@ -1284,7 +1518,7 @@ class Chess(object):
         When a player starts their turn, all of their pieces start out as not
         vulnerable.
         """
-        if self.player.color is "white":
+        if self.player.color == "white":
             self.white_pawn_1.vulnerable = False
             self.white_pawn_2.vulnerable = False
             self.white_pawn_3.vulnerable = False
@@ -1308,6 +1542,15 @@ class Chess(object):
         Castles at black queenside.
         """
         self.safe_pawns()
+        for row in range(8):
+            for column in range(8):
+                if (row+column)%2 == 0:
+                    color = 'white'
+                else:
+                    color = 'black'
+                self.board.itemconfig(self.squares[row][column], fill=color)
+        self.board.itemconfig(self.squares[3][0], fill="darkblue")
+        self.board.itemconfig(self.squares[2][0], fill="darkgreen")
         Chess.all_squares.get("00").piece = None
         Chess.all_squares.get("20").piece = self.black_king
         Chess.all_squares.get("30").piece = self.black_rook_1
@@ -1319,12 +1562,23 @@ class Chess(object):
         self.player = self.white_player
         self.check_castles()
         self.refresh_images()
+        self.status_message.config(text = "Black castled queenside! " + \
+        "White's turn.")
 
     def castle_black_right(self):
         """
         Castles at black kingside.
         """
         self.safe_pawns()
+        for row in range(8):
+            for column in range(8):
+                if (row+column)%2 == 0:
+                    color = 'white'
+                else:
+                    color = 'black'
+                self.board.itemconfig(self.squares[row][column], fill=color)
+        self.board.itemconfig(self.squares[5][0], fill="darkblue")
+        self.board.itemconfig(self.squares[6][0], fill="darkgreen")
         Chess.all_squares.get("40").piece = None
         Chess.all_squares.get("50").piece = self.black_rook_2
         Chess.all_squares.get("60").piece = self.black_king
@@ -1336,12 +1590,23 @@ class Chess(object):
         self.player = self.white_player
         self.check_castles()
         self.refresh_images()
+        self.status_message.config(text = "Black castled kingside! " + \
+        "White's turn.")
 
     def castle_white_left(self):
         """
         Castles at white queenside.
         """
         self.safe_pawns()
+        for row in range(8):
+            for column in range(8):
+                if (row+column)%2 == 0:
+                    color = 'white'
+                else:
+                    color = 'black'
+                self.board.itemconfig(self.squares[row][column], fill=color)
+        self.board.itemconfig(self.squares[3][7], fill="blue")
+        self.board.itemconfig(self.squares[2][7], fill="green")
         Chess.all_squares.get("07").piece = None
         Chess.all_squares.get("27").piece = self.white_king
         Chess.all_squares.get("37").piece = self.white_rook_1
@@ -1353,16 +1618,27 @@ class Chess(object):
         self.player = self.black_player
         self.check_castles()
         self.refresh_images()
-        if self.mode is "easy":
+        if self.mode == "easy":
             self.easy_move()
-        if self.mode is "hard":
+        if self.mode == "hard":
             self.hard_move()
+        self.status_message.config(text = "White castled queenside! " + \
+        "Black's turn.")
 
     def castle_white_right(self):
         """
         Castles at white kingside.
         """
         self.safe_pawns()
+        for row in range(8):
+            for column in range(8):
+                if (row+column)%2 == 0:
+                    color = 'white'
+                else:
+                    color = 'black'
+                self.board.itemconfig(self.squares[row][column], fill=color)
+        self.board.itemconfig(self.squares[5][7], fill="blue")
+        self.board.itemconfig(self.squares[6][7], fill="green")
         Chess.all_squares.get("47").piece = None
         Chess.all_squares.get("57").piece = self.white_rook_2
         Chess.all_squares.get("67").piece = self.white_king
@@ -1374,10 +1650,12 @@ class Chess(object):
         self.player = self.black_player
         self.check_castles()
         self.refresh_images()
-        if self.mode is "easy":
+        if self.mode == "easy":
             self.easy_move()
-        if self.mode is "hard":
+        if self.mode == "hard":
             self.hard_move()
+        self.status_message.config(text = "White castled kingside! " + \
+        "Black's turn.")
 
     def refresh_images(self):
         """
@@ -1401,19 +1679,19 @@ class Chess(object):
         Switches between the "click/click" move functionality and the
         "click/drag" move functionality for the black player.
         """
-        if self.black_player.mode is "click":
+        if self.black_player.mode == "click":
             self.black_player.mode = "drag"
             self.black_click_button.config(text = "Active mode:\nclick/drag")
             if self.player is self.black_player and \
-            self.black_king.location is not "88" and \
-            self.white_king.location is not "88":
+            self.black_king.location != "88" and \
+            self.white_king.location != "88":
                 self.board.bind("<Button-1>", self.click_hold)
         else:
             self.black_player.mode = "click"
             self.black_click_button.config(text = "Active mode:\nclick/click")
             if self.player is self.black_player and \
-            self.black_king.location is not "88" and \
-            self.white_king.location is not "88":
+            self.black_king.location != "88" and \
+            self.white_king.location != "88":
                 self.board.bind("<Button-1>", self.click_click)
 
     def white_ui_toggle(self):
@@ -1425,15 +1703,15 @@ class Chess(object):
             self.white_player.mode = "drag"
             self.white_click_button.config(text = "Active mode:\nclick/drag")
             if self.player is self.white_player and \
-            self.black_king.location is not "88" and \
-            self.white_king.location is not "88":
+            self.black_king.location != "88" and \
+            self.white_king.location != "88":
                 self.board.bind("<Button-1>", self.click_hold)
         else:
             self.white_player.mode = "click"
             self.white_click_button.config(text = "Active mode:\nclick/click")
             if self.player is self.white_player and \
-            self.black_king.location is not "88" and \
-            self.white_king.location is not "88":
+            self.black_king.location != "88" and \
+            self.white_king.location != "88":
                 self.board.bind("<Button-1>", self.click_click)
 
 def main():
