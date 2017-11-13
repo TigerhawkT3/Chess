@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #-------------------------------------------------------------------------------
 # Name:        Chess
 # Purpose:
@@ -33,6 +34,10 @@ try:
     from PIL import Image, ImageTk, ImageSequence
 except:
     print("The Pillow module is not installed. Please install it and try again.")
+try:
+    import chess_notation as cn
+except:
+    print("The Chess Notation module is not available. Please add it to the working folder and try again.")
 try:
     import timecontrol as tc
 except:
@@ -510,10 +515,6 @@ class Chess(object):
         board (Canvas): the visible board, containing rectangles and images
         squares (list): the visible squares on the board, composed of black
             and white rectangles
-        white_promotions (int): the number of pawns that white has promoted
-            into queens
-        black_promotions (int): the number of pawns that black has promoted
-            into queens
         black_rook_1 (Rook): the queenside black rook
         black_knight_1 (Knight): the queenside black knight
         black_bishop_1 (Bishop): the queenside black bishop
@@ -522,24 +523,10 @@ class Chess(object):
         black_bishop_2 (Bishop): the kingside black bishop
         black_knight_2 (Knight): the kingside black knight
         black_rook_2 (Rook): the kingside black rook
-        black_pawn_1 (Pawn): the first black pawn from left
-        black_pawn_2 (Pawn): the second black pawn from left
-        black_pawn_3 (Pawn): the third black pawn from left
-        black_pawn_4 (Pawn): the fourth black pawn from left
-        black_pawn_5 (Pawn): the fifth black pawn from left
-        black_pawn_6 (Pawn): the sixth black pawn from left
-        black_pawn_7 (Pawn): the seventh black pawn from left
-        black_pawn_8 (Pawn): the eighth black pawn from left
+        black_pawns (list): a list of black Pawns starting from the left
         extra_black_queens (list): a list with cells that point to the extra
             queens that black can unlock via pawn promotion
-        white_pawn_1 (Pawn): the first white pawn from left
-        white_pawn_2 (Pawn): the second white pawn from left
-        white_pawn_3 (Pawn): the third white pawn from left
-        white_pawn_4 (Pawn): the fourth white pawn from left
-        white_pawn_5 (Pawn): the fifth white pawn from left
-        white_pawn_6 (Pawn): the sixth white pawn from left
-        white_pawn_7 (Pawn): the seventh white pawn from left
-        white_pawn_8 (Pawn): the eighth white pawn from left
+        white_pawns (list): a list of white Pawns starting from the left
         white_knight_1 (Knight): the queenside white knight
         white_bishop_1 (Bishop): the queenside white bishop
         white_queen (Queen): the white queen
@@ -599,6 +586,11 @@ class Chess(object):
         console_text (Text): a text area for entering code in the console
         console_run (Button): a button to compile and execute the console contents
         console_close (Button); a button to close the console window
+        movelist_box (Listbox): a listbox to display the game's moves
+        movelist_scrollbar (Scrollbar): a scrollbar for movelist_box
+        movelist_box_top (int): the index of the top visible item in the movelist_box
+        white_promo (str): a character '1', '2', '3', or '4' that represents the next white promo
+        black_promo (str): a character '1', '2', '3', or '4' that represents the next black promo
     """
     def __init__(self, parent):
     
@@ -664,7 +656,10 @@ class Chess(object):
         self.filemenu.add_command(label="New timer...", command=self.choose_timer, underline=0)
         self.filemenu.add_command(label="Save", command=self.save_plain, underline=0, accelerator="Ctrl+S")
         self.filemenu.add_command(label="Save As...", command=self.save_as, underline=0, accelerator="Ctrl+Shift+S")
+        self.filemenu.add_command(label="Export game in ICCF notation...", command=self.export_iccf)
+        self.filemenu.add_command(label="Export all notations...", command=self.export_notations)
         self.filemenu.add_command(label="Open...", command=self.load, underline=0, accelerator="Ctrl+O")
+        self.filemenu.add_command(label="Import ICCF and open...", command=lambda: self.load(iccf=True))
         self.filemenu.add_separator()
         self.filemenu.add_command(label="Quit", command=self.quit, underline=0, accelerator="Ctrl+Q")
         self.menubar.add_cascade(label="File", menu=self.filemenu)
@@ -694,7 +689,7 @@ class Chess(object):
         self.bgmenu.add_command(label="Choose framerate...", command=self.choose_framerate)
         self.bgmenu.add_command(label="Stop/restart animation", command=self.start_animation)
         self.boardmenu.add_cascade(label="Background", menu=self.bgmenu)
-        self.boardmenu.add_command(label="Refresh", command=(lambda: self.set_board_size(Label(), self.screen_size)), underline=0, accelerator="F5")
+        self.boardmenu.add_command(label="Refresh", command=(lambda: self.set_board_size(self.screen_size)), underline=0, accelerator="F5")
         self.settingsmenu.add_cascade(label="UI", menu=self.uimenu)
         self.settingsmenu.add_cascade(label="Opponent", menu=self.opponentmenu)
         self.settingsmenu.add_cascade(label="Audio", menu=self.audiomenu)
@@ -716,6 +711,21 @@ class Chess(object):
         self.castlemenu.add_command(label="White kingside", command=self.castle_white_right, underline=0)
         self.menubar.add_cascade(label="Castle", menu=self.castlemenu)
         
+        self.promomenu = Menu(self.menubar, tearoff=0)
+        self.blackpromomenu = Menu(self.promomenu, tearoff=0)
+        self.blackpromomenu.add_command(label="Queen", command=lambda: self.set_promotion('black', '1'))
+        self.blackpromomenu.add_command(label="Rook", command=lambda: self.set_promotion('black', '2'))
+        self.blackpromomenu.add_command(label="Bishop", command=lambda: self.set_promotion('black', '3'))
+        self.blackpromomenu.add_command(label="Knight", command=lambda: self.set_promotion('black', '4'))
+        self.whitepromomenu = Menu(self.promomenu, tearoff=0)
+        self.whitepromomenu.add_command(label="Queen", command=lambda: self.set_promotion('white', '1'))
+        self.whitepromomenu.add_command(label="Rook", command=lambda: self.set_promotion('white', '2'))
+        self.whitepromomenu.add_command(label="Bishop", command=lambda: self.set_promotion('white', '3'))
+        self.whitepromomenu.add_command(label="Knight", command=lambda: self.set_promotion('white', '4'))
+        self.promomenu.add_cascade(label="Black", menu=self.blackpromomenu)
+        self.promomenu.add_cascade(label="White", menu=self.whitepromomenu)
+        self.menubar.add_cascade(label="Promotion", menu=self.promomenu)
+        
         self.helpmenu = Menu(self.menubar, tearoff=0)
         self.helpmenu.add_command(label="View help", command=self.help, underline=0, accelerator="F1")
         self.helpmenu.add_command(label="About", command=self.about, underline=0)
@@ -730,12 +740,20 @@ class Chess(object):
             self.set_opponent(tempopponent) # set the opponent
 
         # Status message. When the game ends, the result is described here.
-        self.status_message = Label(self.frame, text = "Welcome to Chess!")
+        self.status_message = Label(self.frame, text="Welcome to Chess!")
         self.status_message.grid(row=1, column = 0)
         
         # Create the two players, white and black.
         self.white_player = Player("white")
         self.black_player = Player("black")
+        
+        # Set a default pawn promotion to queen for each player.
+        self.white_promo = '1'
+        self.black_promo = '1'
+        
+        # Disable the menu options for the current default promotion
+        self.blackpromomenu.entryconfig(int(self.black_promo)-1, state=DISABLED)
+        self.whitepromomenu.entryconfig(int(self.white_promo)-1, state=DISABLED)
 
         """
         Default sounds from http://www.trekcore.com/audio:
@@ -825,6 +843,7 @@ class Chess(object):
         self.replaying = False # indicate that we're not currently replaying - important for castle functions
         self.light_square_color = 'white'
         self.dark_square_color = 'gray35'
+        self.movelist_box_top = 0 # initialize the top index of the movelist_box to 0
         
         tempout = self.argvs.get('outline')
         if tempout == 'clear':
@@ -864,7 +883,7 @@ class Chess(object):
                 tempsuppressaudio = self.audio
                 if tempsuppressaudio:
                     self.audio = False
-                parent.after(1, lambda: self.set_board_size(Label(), tempboard)) # pass it in, with a dummy widget to destroy
+                parent.after(1, lambda: self.set_board_size(tempboard)) # pass it in
                 if tempsuppressaudio:
                     self.audio = True
             except:
@@ -872,7 +891,7 @@ class Chess(object):
         
         tempfile = self.argvs.get('savefile') # look for the savefile switch
         if tempfile: # if the value wasn't None,
-            self.load('init', tempfile) # tell load that it was an 'init' load and pass it the filename
+            self.load(filename=tempfile) # tell load that it was an 'init' load and pass it the filename
             self.step_end() # and go to the most recent step of the replay
 
     def draw_board(self, *args):
@@ -923,13 +942,20 @@ class Chess(object):
                         column*(self.screen_size//8)+(self.screen_size//8), fill = color))
 
         self.board.grid(row=0, column=0)
+        
+        self.movelist_scrollbar = Scrollbar(self.frame, orient=VERTICAL)
+        self.movelist_box = Listbox(self.frame, yscrollcommand=self.movelist_scrollbar.set, width=5)
+        self.movelist_scrollbar.config(command=self.movelist_box.yview)
+        self.movelist_scrollbar.grid(row=0, column=2, sticky='NS')
+        self.movelist_box.grid(row=0, column=1, sticky='NS')
+        try: # fill the movelist box if there's a movelist
+            self.movelist_box.insert(END, *cn.chess11_to_iccf_full(self.movelist))
+        except AttributeError: # if not, do nothing
+            pass
 
         # Make a dictionary of location:Square.
         self.all_squares = {str(row)+str(column):Square(str(row)+str(column))
             for row in range8 for column in range8}
-
-        self.white_promotions = 0 # number of white pawns promoted into queens
-        self.black_promotions = 0 # number of black pawns promoted into queens
 
         # The pieces.
         self.black_rook_1 = Rook(self.all_squares, "black", "00")
@@ -940,24 +966,13 @@ class Chess(object):
         self.black_bishop_2 = Bishop(self.all_squares, "black", "50")
         self.black_knight_2 = Knight(self.all_squares, "black", "60")
         self.black_rook_2 = Rook(self.all_squares, "black", "70")
-        self.black_pawn_1 = Pawn(self.all_squares, "black", "01")
-        self.black_pawn_2 = Pawn(self.all_squares, "black", "11")
-        self.black_pawn_3 = Pawn(self.all_squares, "black", "21")
-        self.black_pawn_4 = Pawn(self.all_squares, "black", "31")
-        self.black_pawn_5 = Pawn(self.all_squares, "black", "41")
-        self.black_pawn_6 = Pawn(self.all_squares, "black", "51")
-        self.black_pawn_7 = Pawn(self.all_squares, "black", "61")
-        self.black_pawn_8 = Pawn(self.all_squares, "black", "71")
+        self.black_pawns = [Pawn(self.all_squares, "black", str(i)+'1') for i in range8]
         self.extra_black_queens = [Queen(self.all_squares, "black", "88") for i in range8]
+        self.extra_black_rooks = [Rook(self.all_squares, "black", "88") for i in range8]
+        self.extra_black_bishops = [Bishop(self.all_squares, "black", "88") for i in range8]
+        self.extra_black_knights = [Knight(self.all_squares, "black", "88") for i in range8]
 
-        self.white_pawn_1 = Pawn(self.all_squares, "white", "06")
-        self.white_pawn_2 = Pawn(self.all_squares, "white", "16")
-        self.white_pawn_3 = Pawn(self.all_squares, "white", "26")
-        self.white_pawn_4 = Pawn(self.all_squares, "white", "36")
-        self.white_pawn_5 = Pawn(self.all_squares, "white", "46")
-        self.white_pawn_6 = Pawn(self.all_squares, "white", "56")
-        self.white_pawn_7 = Pawn(self.all_squares, "white", "66")
-        self.white_pawn_8 = Pawn(self.all_squares, "white", "76")
+        self.white_pawns = [Pawn(self.all_squares, "white", str(i)+'6') for i in range8]
         self.white_rook_1 = Rook(self.all_squares, "white", "07")
         self.white_knight_1 = Knight(self.all_squares, "white", "17")
         self.white_bishop_1 = Bishop(self.all_squares, "white", "27")
@@ -967,6 +982,9 @@ class Chess(object):
         self.white_knight_2 = Knight(self.all_squares, "white", "67")
         self.white_rook_2 = Rook(self.all_squares, "white", "77")
         self.extra_white_queens = [Queen(self.all_squares, "white", "88") for i in range8]
+        self.extra_white_rooks = [Rook(self.all_squares, "white", "88") for i in range8]
+        self.extra_white_bishops = [Bishop(self.all_squares, "white", "88") for i in range8]
+        self.extra_white_knights = [Knight(self.all_squares, "white", "88") for i in range8]
 
         # This will put pieces in each square to set up the game.
         self.all_squares.get("00").piece = self.black_rook_1
@@ -977,23 +995,11 @@ class Chess(object):
         self.all_squares.get("50").piece = self.black_bishop_2
         self.all_squares.get("60").piece = self.black_knight_2
         self.all_squares.get("70").piece = self.black_rook_2
-        self.all_squares.get("01").piece = self.black_pawn_1
-        self.all_squares.get("11").piece = self.black_pawn_2
-        self.all_squares.get("21").piece = self.black_pawn_3
-        self.all_squares.get("31").piece = self.black_pawn_4
-        self.all_squares.get("41").piece = self.black_pawn_5
-        self.all_squares.get("51").piece = self.black_pawn_6
-        self.all_squares.get("61").piece = self.black_pawn_7
-        self.all_squares.get("71").piece = self.black_pawn_8
-
-        self.all_squares.get("06").piece = self.white_pawn_1
-        self.all_squares.get("16").piece = self.white_pawn_2
-        self.all_squares.get("26").piece = self.white_pawn_3
-        self.all_squares.get("36").piece = self.white_pawn_4
-        self.all_squares.get("46").piece = self.white_pawn_5
-        self.all_squares.get("56").piece = self.white_pawn_6
-        self.all_squares.get("66").piece = self.white_pawn_7
-        self.all_squares.get("76").piece = self.white_pawn_8
+        
+        for p in range8:
+            self.all_squares.get(str(p)+'1').piece = self.black_pawns[p]
+            self.all_squares.get(str(p)+'6').piece = self.white_pawns[p]
+        
         self.all_squares.get("07").piece = self.white_rook_1
         self.all_squares.get("17").piece = self.white_knight_1
         self.all_squares.get("27").piece = self.white_bishop_1
@@ -1007,23 +1013,24 @@ class Chess(object):
         # iterated through later on
         self.all_pieces = [self.black_rook_1, self.black_knight_1,
         self.black_bishop_1, self.black_queen, self.black_king,
-        self.black_bishop_2, self.black_knight_2, self.black_rook_2,
-        self.black_pawn_1, self.black_pawn_2, self.black_pawn_3,
-        self.black_pawn_4, self.black_pawn_5, self.black_pawn_6,
-        self.black_pawn_7, self.black_pawn_8]
+        self.black_bishop_2, self.black_knight_2, self.black_rook_2] + self.black_pawns
 
         for i in range8:
             self.all_pieces.append(self.extra_black_queens[i])
+            self.all_pieces.append(self.extra_black_rooks[i])
+            self.all_pieces.append(self.extra_black_bishops[i])
+            self.all_pieces.append(self.extra_black_knights[i])
 
-        self.all_pieces += [self.white_pawn_1, self.white_pawn_2,
-        self.white_pawn_3, self.white_pawn_4, self.white_pawn_5,
-        self.white_pawn_6, self.white_pawn_7, self.white_pawn_8,
-        self.white_rook_1, self.white_knight_1, self.white_bishop_1,
+        self.all_pieces += (self.white_pawns +
+        [self.white_rook_1, self.white_knight_1, self.white_bishop_1,
         self.white_queen, self.white_king, self.white_bishop_2,
-        self.white_knight_2, self.white_rook_2]
+        self.white_knight_2, self.white_rook_2])
 
         for i in range8:
             self.all_pieces.append(self.extra_white_queens[i])
+            self.all_pieces.append(self.extra_white_rooks[i])
+            self.all_pieces.append(self.extra_white_bishops[i])
+            self.all_pieces.append(self.extra_white_knights[i])
 
         self.square_overlay = [] # a list of all the piece icons or transparent
         # images that can rest on any given square
@@ -1069,7 +1076,8 @@ class Chess(object):
         self.parent.bind("<Control-Up>", self.step_start)
         self.parent.bind("<Control-Right>", self.step_forward)
         self.parent.bind("<Control-Down>", self.step_end)
-        self.parent.bind("<F5>", lambda x: self.set_board_size(Label(), self.screen_size))
+        self.movelist_box.bind("<Double-Button-1>", self.step_to)
+        self.parent.bind("<F5>", lambda x: self.set_board_size(self.screen_size))
         self.parent.bind("<Control-~>", lambda *x: self.console())
         
         if self.audio and not self.replaying: # if audio is on
@@ -1101,7 +1109,10 @@ class Chess(object):
             self.console_window.tk.call('wm', 'iconphoto', self.console_window._w, ImageTk.PhotoImage(Image.open("ico.png")))
         except: # if it fails
             pass # leave the user alone
-        self.console_text = Text(self.console_window)
+        self.console_scrollbar = Scrollbar(self.console_window, orient=VERTICAL)
+        self.console_text = Text(self.console_window, yscrollcommand=self.console_scrollbar.set)
+        self.console_scrollbar.config(command=self.console_text.yview)
+        self.console_scrollbar.grid(row=0, column=2, sticky='NS')
         self.console_text.grid(row=0, column=0, columnspan=2)
         self.console_text.insert(END,
         '\n'.join(('# WARNING: READ THE INSTRUCTIONS BEFORE OPERATING THIS CONSOLE.',
@@ -1158,12 +1169,12 @@ class Chess(object):
         recommendation = Label(sizewindow, text="Recommended setting: " + use) # tell the user the recommendation
         recommendation.grid(row=1, column=0, columnspan=5) # grid the resolution
         # an 'ok' button that, on click, sends the current window and the chosen size to set_board_size()
-        ok = Button(sizewindow, text="\nOK\n", width=15, height=3, command=lambda: self.set_board_size(sizewindow, sizescale.get()))
+        ok = Button(sizewindow, text="\nOK\n", width=15, height=3, command=lambda: self.set_board_size(sizescale.get(), sizewindow))
         ok.grid(row=2, column=1) # grid the ok button
         cancel = Button(sizewindow, text="\nCancel\n", width=15, height=3, command=sizewindow.destroy) # cancel button
         cancel.grid(row=2, column=3) # grid the cancel button
     
-    def set_board_size(self, topwindow, size):
+    def set_board_size(self, size, topwindow=None):
         """
         Sets the board size with the specified value.
         Parameters:
@@ -1174,7 +1185,7 @@ class Chess(object):
             return # don't use it
         self.screen_size = size # save the new size
         
-        self.parent.geometry("".join((str(size+4),"x",str(size+25)))) # set the window size to match the board
+        self.parent.geometry("{}x{}".format(size+55,size+25)) # set the window size to match the board
         if len(self.movelist) == 0 or self.replaycounter ==0: # if the movelist is empty or we're at the start
             try:
                 self.board.destroy() # destroy it if it's there
@@ -1193,7 +1204,8 @@ class Chess(object):
         self.load_icons(self.icon_folder) # reload the icons for the new size
         self.refresh_images() # and refresh them
         
-        topwindow.destroy() # destroy the dialog box where we chose this
+        if topwindow:
+            topwindow.destroy() # destroy the dialog box where we chose this
     
     def choose_bg(self):
         """
@@ -1322,6 +1334,7 @@ class Chess(object):
         Creates a window for setting up a custom timer.
         """
         timewindow = Toplevel()
+        timewindow.focus_set()
         timewindow.title("Timer setup")
         try: # try to load an img for the window's icon (top left corner of title bar)
             audiowindow.tk.call('wm', 'iconphoto', audiowindow._w, ImageTk.PhotoImage(Image.open("ico.png")))
@@ -1566,7 +1579,6 @@ class Chess(object):
             explosion (int): the new chosen explosion volume
         """
         self.audio = master / 100
-        #print(master*start/1e4)
         self.sound_filenames.get('game_start.ogg').set_volume(master * start / 1e4)
         self.sound_filenames.get('ui_toggle.ogg').set_volume(master * ui / 1e4)
         self.sound_filenames.get('audio_on.ogg').set_volume(master * audio / 1e4)
@@ -1669,10 +1681,23 @@ class Chess(object):
         else:
             self.status_message.config(text="Opponent mode changed to " + opponent + ".")
     
+    def set_promotion(self, color, piece):
+        if color=='black':
+            self.black_promo = piece
+        else:
+            self.white_promo = piece
+        
+        for i in range(4):
+            self.blackpromomenu.entryconfig(i, state=NORMAL)
+            self.whitepromomenu.entryconfig(i, state=NORMAL)
+        
+        self.blackpromomenu.entryconfig(int(self.black_promo)-1, state=DISABLED)
+        self.whitepromomenu.entryconfig(int(self.white_promo)-1, state=DISABLED)
+    
     def new_game(self, *args):
         """
         Starts a new game, reinitializing the save name, move list, and replay counter.
-        Paramter:
+        Parameter:
             *args: may or may not include an event
         """
         # if there are unsaved changes and user confirms, save (will ask for filename if necessary)
@@ -1693,6 +1718,7 @@ class Chess(object):
         
         self.savename = "" # a save name will need to be chosen
         self.movelist = [] # a fresh movelist
+        self.movelist_box.delete(0, END)
         self.replaycounter = 0 # start from the beginning of a new match
         self.unsaved_changes = False
 
@@ -1704,21 +1730,24 @@ class Chess(object):
         Move back one step in a replay. Nothing ever actually moves backwards - it works
         by going to the beginning and stepping forward all the way until one move prior to
         where it was.
-        Paramter:
+        Parameter:
             *args: may or may not include an event
         """
+        self.movelist_box_top = self.movelist_box.nearest(0) # save the current movelist_box_top
         # if there are no loaded moves, or we're already at the the very beginning
-        if len(self.movelist) == 0 or self.replaycounter == 0:
+        if not (self.movelist and self.replaycounter):
             return # return and do nothing
         count = self.replaycounter - 1 # decrement the replay counter by 1
-        self.step_start() # go to the beginning
+        self.step_start(wait=True) # go to the beginning
         for i in range(count): # go forward that number of times
             self.step_forward(wait=True)
         if self.audio: # if audio is on
             self.sound_filenames.get("undo.ogg").play() # play the 'undo' sound
         self.check_castles()
-        self.refresh_highlighting()
+        if self.movelist and len(self.movelist[count-1])!=2:
+            self.refresh_highlighting()
         self.refresh_images()
+        self.parent.after(1, self.refresh_movelist_box)
         
     def step_forward(self, *args, **kwargs):
         """
@@ -1756,10 +1785,13 @@ class Chess(object):
             self.audio = audio # turn it back on
         if not kwargs.get('wait'): # if we weren't told to wait til the end,
             self.check_castles() # check castles now
+            self.movelist_box_top = self.movelist_box.nearest(0) # save the current movelist_box_top
             self.refresh_images() # refresh images now
-            self.refresh_highlighting() # refresh highlighting now
+            if len(do_move)!=2: # if it's not a castle,
+                self.refresh_highlighting() # refresh highlighting now
+            self.refresh_movelist_box()
         
-    def step_start(self, *args):
+    def step_start(self, *args, **kwargs):
         """
         Goes to the beginning of a replay.
         Parameter:
@@ -1773,6 +1805,8 @@ class Chess(object):
         self.draw_board() # redraw it
         self.replaycounter = 0 # start from the beginning of a replay
         self.replaying = False
+        if not kwargs.get('wait'):
+            self.refresh_movelist_box()
     
     def step_end(self, *args):
         """
@@ -1780,13 +1814,23 @@ class Chess(object):
         Parameter:
             *args: may or may not include an event
         """
-        if len(self.movelist) == 0: # if the movelist is empty
+        if not self.movelist: # if the movelist is empty
             return # do nothing
         while len(self.movelist) > self.replaycounter: # while we're not at the end of the movelist
             self.step_forward(wait=True) # step forward
         self.check_castles()
-        self.refresh_highlighting()
+        if self.movelist and len(self.movelist[-1])!=2:
+            self.refresh_highlighting()
         self.refresh_images()
+        self.refresh_movelist_box()
+        
+    def step_to(self, *args):
+        """
+        Goes to the selected move.
+        """
+        self.replaycounter = self.movelist_box.index(ACTIVE)+2 # set the replay counter we want,
+        # taking into account the 0-indexing/1-indexing, and the fact that step_back goes back by 1
+        self.step_back()
         
     def help(self, *args):
         """
@@ -1815,7 +1859,7 @@ class Chess(object):
         about.geometry("200x150") # size it
         spacer = Label(about, text="\t ") # make a spacer to move the content to the right by a bit
         spacer.grid(row=0, column=0, rowspan=2) # put the spacer at the top
-        msg = Label(about, text="\n\n\nChess version 10\nBy David Muller\n\n") # make a message
+        msg = Label(about, text="\n\n\nChess version 11\nBy David Muller\n\n") # make a message
         msg.grid(row=0, column=1) # grid it
         close = Button(about, text="Close Window", command=about.destroy) # make a button
         close.grid(row=1, column=1) # grid it
@@ -1855,7 +1899,7 @@ class Chess(object):
             filename (string): the name of the file to write
         """
         try: # write the movelist to a file with the specified name
-            with open(filename, 'w', encoding = 'utf-8-sig') as output:
+            with open(filename, 'w', encoding='utf-8-sig') as output:
                 for item in self.movelist:
                     output.write(item + "\n")
             self.unsaved_changes = False # they just saved, so there are no unsaved changes
@@ -1865,12 +1909,41 @@ class Chess(object):
                 message="Error saving file. Ensure that there is room and you have write permission.")
             else:
                 self.status_message.config(text="Error saving file. Ensure that there is room and you have write permission.")
-                
-    def load(self, *args):
+    
+    def export_iccf(self):
+        temp = filedialog.asksaveasfilename(defaultextension=".txt", \
+        filetypes=(('Text files', '.txt'),('All files', '.*'))) # ask for a name
+        if not temp: # if the user canceled,
+            return # just return
+        with open(temp, 'w', encoding='utf-8-sig') as output: # open a file
+            for move in self.movelist_box.get(0, END):
+                output.write(move + '\n')
+    
+    def export_notations(self):
+        """
+        Exports the current game in several notations (SAN, FAN, LAN, MAN, RAN, CRAN, Smith, Coordinate, and ICCF)
+        to a text file with the chosen name. The entries are tab-delimited. To align them with spaces instead,
+        use the standalone Chess Notation module.
+        """
+        temp = filedialog.asksaveasfilename(defaultextension=".txt", \
+        filetypes=(('Text files', '.txt'),('All files', '.*'))) # ask for a name
+        if not temp: # if the user canceled,
+            return # just return
+        cn.model = cn.new_game() # new model
+        cn.result = [] # new result
+        for move in self.movelist_box.get(0, END): # go through each ICCF move in the movelist box
+            cn.do_move(move) # run the move through the model
+        with open(temp, 'w', encoding='utf-8-sig') as output: # open a file
+            output.write('\t'.join(['SAN', 'FAN', 'LAN', 'MAN', 'RAN', 'CRAN', 'Smith', 'Coord', 'ICCF', 'Comments\n'])) # write the header
+            for item in cn.result: # go through each item in the list of notations
+                output.write('\t'.join(item) + '\n') # join the item with tabs, write it, add a newline
+        
+    def load(self, event=None, filename='', iccf=False):
         """
         Loads a game from a file on the computer.
-        Parameter:
-            *args: may be nothing, 'init' and a filename, or an event
+        Parameters:
+            event (event): may be an event, or nothing, defaulting to None
+            filename (str): may be a string, or nothing, defaulting to empty string
         """
         # if there are unsaved changes and the user wants to save,
         if self.unsaved_changes:
@@ -1885,10 +1958,7 @@ class Chess(object):
                 # separate file, they have to use save_as(). if i used save_as() for this,
                 # user would get confused when asked to overwrite the file they were using.
         
-        try:
-            args # first, see if there are any args
-            filename = args[1] # then see if there are two, and if so, grab the second one
-        except: # if a filename wasn't given,
+        if not filename: # if no filename was passed,
             filename = filedialog.askopenfilename(defaultextension=".txt", \
             filetypes=(('Text files', '.txt'),('All files', '.*'))) # ask for a name
             if not filename: # if they hit cancel, returning an empty string
@@ -1901,13 +1971,17 @@ class Chess(object):
         self.draw_board() # basically, start a new game
         # and load the specified save file into a movelist
         try: # open the specified file and write the contents to the list
-            movelist = [] # create a blank movelist
-            with open(filename, 'r', encoding = 'utf-8-sig') as file:
-                for line in file:
-                    movelist.append(line[:-1])
+            with open(filename, 'r', encoding='utf-8-sig') as file:
+                self.movelist = [line.rstrip() for line in file]
                 # the text file appears to end with a blank line, but that's really just the
                 # \n of the previous line, so there's no extraneous empty item at the end of the list.
-            self.movelist = movelist # replace the existing movelist with the loaded one
+            if iccf: # to import an ICCF game:
+                cn.model = cn.new_game() # reinitialize the model just in case
+                cn.result = [] # reinitialize the result just in case
+                self.movelist = [cn.do_move(move) for move in self.movelist]
+            self.movelist_box.delete(0, END) # delete the existing contents of the movelist box
+            for item in self.movelist: # go through the movelist
+                self.movelist_box.insert(END, cn.chess11_to_iccf_move(item)) # and add each item to the movelist box
             self.replaycounter = 0 # start from the beginning of a new match
             self.unsaved_changes = False
             if messagebox.askyesno(title="Load successful", message="Game loaded. Go to the most recent move?"):
@@ -1915,9 +1989,9 @@ class Chess(object):
         except: # if that doesn't work for some reason, say so
             if self.audio:
                 messagebox.showerror(title="Error", \
-                message="Error opening file. Ensure that there is room and you have write permission.")
+                message="Error opening file. Ensure that you have read permission.")
             else:
-                self.status_message.config(text="Error opening file. Ensure that there is room and you have write permission.")
+                self.status_message.config(text="Error opening file. Ensure that you have read permission.")
                 
     def check_castles(self):
         """
@@ -1977,16 +2051,9 @@ class Chess(object):
         self.black_bishop_2.generate_moveset()
         self.black_knight_2.generate_moveset()
         self.black_rook_2.generate_moveset()
-        self.black_pawn_1.generate_moveset()
-        self.black_pawn_2.generate_moveset()
-        self.black_pawn_3.generate_moveset()
-        self.black_pawn_4.generate_moveset()
-        self.black_pawn_5.generate_moveset()
-        self.black_pawn_6.generate_moveset()
-        self.black_pawn_7.generate_moveset()
-        self.black_pawn_8.generate_moveset()
-        for piece in self.extra_black_queens:
-            piece.generate_moveset()
+        for l in [self.black_pawns, self.extra_black_bishops, self.extra_black_knights, self.extra_black_queens, self.extra_black_rooks]:
+            for p in l:
+                p.generate_moveset()
 
         self.white_rook_1.generate_moveset()
         self.white_knight_1.generate_moveset()
@@ -1996,16 +2063,9 @@ class Chess(object):
         self.white_bishop_2.generate_moveset()
         self.white_knight_2.generate_moveset()
         self.white_rook_2.generate_moveset()
-        self.white_pawn_1.generate_moveset()
-        self.white_pawn_2.generate_moveset()
-        self.white_pawn_3.generate_moveset()
-        self.white_pawn_4.generate_moveset()
-        self.white_pawn_5.generate_moveset()
-        self.white_pawn_6.generate_moveset()
-        self.white_pawn_7.generate_moveset()
-        self.white_pawn_8.generate_moveset()
-        for piece in self.extra_white_queens:
-            piece.generate_moveset()
+        for l in [self.white_pawns, self.extra_white_bishops, self.extra_white_knights, self.extra_white_queens, self.extra_white_rooks]:
+            for p in l:
+                p.generate_moveset()
 
     def easy_move(self):
         """
@@ -2014,12 +2074,10 @@ class Chess(object):
         # create a set of all AI pieces
         living_pieces = {self.black_rook_1, self.black_knight_1,
         self.black_bishop_1, self.black_queen, self.black_king,
-        self.black_bishop_2, self.black_knight_2, self.black_rook_2,
-        self.black_pawn_1, self.black_pawn_2, self.black_pawn_3,
-        self.black_pawn_4, self.black_pawn_5, self.black_pawn_6,
-        self.black_pawn_7, self.black_pawn_8}
-        for extra in self.extra_black_queens:
-            living_pieces.add(extra)
+        self.black_bishop_2, self.black_knight_2, self.black_rook_2} | set(self.black_pawns)
+        for l in [self.extra_black_bishops, self.extra_black_knights, self.extra_black_queens, self.extra_black_rooks]:
+            for extra in l:
+                living_pieces.add(extra)
 
         dead_pieces = set() # empty set for invalid AI pieces
         self.generate_all_movesets()
@@ -2039,8 +2097,10 @@ class Chess(object):
 
         # truncate and write the move in the movelist
         self.movelist = self.movelist[:self.replaycounter]
+        self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
         self.replaycounter += 1
         self.movelist.append(piece_to_move.location + move)
+        self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1])) # write the move to the movelist box
         self.move(piece_to_move, move) # carry out the move
         self.unsaved_changes = True # note that there are unsaved changes to this game
         self.check_castles() # check castling buttons
@@ -2057,12 +2117,10 @@ class Chess(object):
         # create a set of all AI pieces
         living_pieces = {self.black_rook_1, self.black_knight_1,
         self.black_bishop_1, self.black_queen, self.black_king,
-        self.black_bishop_2, self.black_knight_2, self.black_rook_2,
-        self.black_pawn_1, self.black_pawn_2, self.black_pawn_3,
-        self.black_pawn_4, self.black_pawn_5, self.black_pawn_6,
-        self.black_pawn_7, self.black_pawn_8}
-        for extra in self.extra_black_queens:
-            living_pieces.add(extra)
+        self.black_bishop_2, self.black_knight_2, self.black_rook_2} | set(self.black_pawns)
+        for l in [self.extra_black_bishops, self.extra_black_knights, self.extra_black_queens, self.extra_black_rooks]:
+            for extra in l:
+                living_pieces.add(extra)
 
         dead_pieces = set() # empty set for invalid AI pieces
         self.generate_all_movesets()
@@ -2078,12 +2136,10 @@ class Chess(object):
         # make a set of all enemy pieces
         enemy_pieces = {self.white_rook_1, self.white_knight_1,
         self.white_bishop_1, self.white_queen, self.white_king,
-        self.white_bishop_2, self.white_knight_2, self.white_rook_2,
-        self.white_pawn_1, self.white_pawn_2, self.white_pawn_3,
-        self.white_pawn_4, self.white_pawn_5, self.white_pawn_6,
-        self.white_pawn_7, self.white_pawn_8}
-        for extra in self.extra_white_queens:
-            enemy_pieces.add(extra)
+        self.white_bishop_2, self.white_knight_2, self.white_rook_2} | self.white_pawns
+        for l in [self.extra_white_bishops, self.extra_white_knights, self.extra_white_queens, self.extra_white_rooks]:
+            for extra in l:
+                enemy_pieces.add(extra)
 
         dead_enemies = set() # make an empty set for nonthreatening enemies
         for piece in enemy_pieces:
@@ -2143,9 +2199,11 @@ class Chess(object):
         
         # truncate and write the move in the movelist
         self.movelist = self.movelist[:self.replaycounter]
+        self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
         self.replaycounter += 1
         # write the move in the movelist
         self.movelist.append(piece_to_move.location + move)
+        self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1])) # write the move to the movelist box
         self.move(piece_to_move, move) # move
         self.unsaved_changes = True # note that there are unsaved changes to this game
         self.check_castles() # check castling buttons
@@ -2194,6 +2252,8 @@ class Chess(object):
         # Parses the mouse cursor location at the time of the click into a
         # string that the game's logic can handle.
         click = str(event.x//(self.screen_size//8)) + str(event.y//(self.screen_size//8))
+        if not self.all_squares.get(click): # if the user click on the edge of the canvas, no piece
+            return # don't try to do things
         token = self.all_squares.get(click).piece
 
         if self.first_click: # if it's the first click
@@ -2325,9 +2385,11 @@ class Chess(object):
         # if the target square is in the chosen piece's moveset
         if click in self.chosen_piece.moveset:
             self.movelist = self.movelist[:self.replaycounter]
+            self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
             self.replaycounter += 1
             # write the move in the movelist
             self.movelist.append(self.chosen_piece.location + click)
+            self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1])) # write the move to the movelist box
             self.move(self.chosen_piece, click) # move the piece
             self.unsaved_changes = True # note that there are unsaved changes to this game
             # if black hasn't lost
@@ -2352,6 +2414,8 @@ class Chess(object):
             destination (string): the string representation of the destination
                 square
         """
+        promotion = destination[2:] # third character or empty string
+        destination = destination[:2] # first 2 chars
         # if there was a piece moved previously
         self.last_source = chosen_piece.location # this piece is the last source
         self.last_target = destination # its destination is the last target
@@ -2364,8 +2428,7 @@ class Chess(object):
             chosen_piece.moved = True # this piece has moved
         if "pawn" in chosen_piece.type: # if this piece is a pawn
             # and it was allowed to move 2 squares
-            if int(destination[1]) - int(chosen_piece.location[1]) \
-            in (-2,2):
+            if int(destination[1]) - int(chosen_piece.location[1]) in (-2,2):
                 chosen_piece.vulnerable = True # it's vulnerable
             # the piece on the square behind the pawn
             behind = self.all_squares.get(destination[0] +
@@ -2376,31 +2439,50 @@ class Chess(object):
                         behind.location = "88" # that pawn is captured
                         # and the square is now empty
                         self.all_squares.get(destination[0] +
-                        str(int(destination[1])-chosen_piece.direction)) \
-                        .piece = None
+                        str(int(destination[1])-chosen_piece.direction)).piece = None
             # if the pawn got to the top row
             if destination[1] == "0":
+                extras = [None, self.extra_white_queens, self.extra_white_rooks, self.extra_white_bishops, self.extra_white_knights]
+                if promotion: # from replay
+                    extra = extras[int(promotion)] # use promotion
+                else: # manual move
+                    extra = self.white_promo # use preset character
+                    self.movelist[-1] += extra # add this char to the saved move
+                    self.movelist_box.delete(END) # remove the last, now-incomplete item from the listbox
+                    self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1])) # and add the 5-char move
+                    extra = extras[int(extra)] # use the proper set of pieces from the list
                 chosen_piece.location = "88" # the pawn gets sort of 'captured'
                 # if there was an enemy on that square
                 if target_piece is not None:
                     target_piece.location = "88" # it's captured
                 # and the former pawn becomes the next extra queen
-                target_piece = self.all_squares.get(destination).piece = \
-                self.extra_white_queens[self.white_promotions]
+                for p in extra:
+                    if p.location == '88':
+                        target_piece = self.all_squares.get(destination).piece = p
+                        break
                 target_piece.location = destination # located at the destination
-                self.white_promotions += 1 # increment the extra queen counter
                 chosen_piece = target_piece # chosen piece set to target
             # if the pawn got to the bottom row
             if destination[1] == "7":
+                extras = [None, self.extra_black_queens, self.extra_black_rooks, self.extra_black_bishops, self.extra_black_knights]
+                if promotion: # from replay
+                    extra = extras[int(promotion)] # use promotion
+                else: # manual move
+                    extra = self.black_promo # use preset character
+                    self.movelist[-1] += extra # add this char to the saved move
+                    self.movelist_box.delete(END) # remove the last, now-incomplete item from the listbox
+                    self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1])) # and add the 5-char move
+                    extra = extras[int(extra)] # use the proper set of pieces from the list
                 chosen_piece.location = "88" # the pawn gets sort of 'captured'
                 # if there was an enemy on that square
                 if target_piece is not None:
                     target_piece.location = "88" # it's captured
                 # and the former pawn becomes the next extra queen
-                target_piece = self.all_squares.get(destination).piece= \
-                self.extra_black_queens[self.black_promotions]
+                for p in extra:
+                    if p.location == '88':
+                        target_piece = self.all_squares.get(destination).piece = p
+                        break
                 target_piece.location = destination # located at the destination
-                self.black_promotions += 1 # increment the extra queen counter
                 chosen_piece = target_piece # chosen piece set to target
         if target_piece is not None: # if there was a piece on the target square
             # if it really was a capture and not a promotion
@@ -2422,11 +2504,12 @@ class Chess(object):
         else: # if it was black's turn
             self.player = self.white_player # now it's white's
         if not self.replaying:
+            self.movelist_box_top = self.movelist_box.nearest(0) # save the current movelist_box_top
+            self.refresh_movelist_box()
             self.refresh_highlighting()
             self.check_castles()
             self.refresh_images()
-        if self.black_king.location != "88" and self.white_king.location \
-        != "88": # if the game continues
+        if self.black_king.location != "88" and self.white_king.location != "88": # if the game continues
             if self.player.mode == "click": # if it's click mode
                 self.board.bind("<Button-1>", self.click_click) # bind that
             else: # otherwise
@@ -2447,7 +2530,7 @@ class Chess(object):
                 self.board.itemconfig(self.squares[row][column], fill=color)
         if self.player is self.white_player: # if white to go
             color = "dark" # 'dark' color prefix
-            self.status_message.config(text = "White's turn.") # announce white
+            self.status_message.config(text="White's turn.") # announce white
         else: # if black to go
             color = "" # no color prefix
             self.status_message.config(text = "Black's turn.") # announce black
@@ -2458,7 +2541,27 @@ class Chess(object):
             # color the last target with a variety of green
             self.board.itemconfig(self.squares[int(self.last_target[0])]
                 [int(self.last_target[1])], fill=color+"green")
-        
+        try:
+            self.board
+        except AttributeError:
+            return
+        if self.mode != 'human' and '88' not in (self.black_king.location, self.white_king.location):
+            if self.player is self.black_player:
+                self.board.unbind("<Button-1>")
+            else:
+                if self.player.mode == "click": # if it's click mode
+                    self.board.bind("<Button-1>", self.click_click) # bind that
+                else: # otherwise
+                    self.board.bind("<Button-1>", self.click_hold) # bind drag
+    
+    def refresh_movelist_box(self):
+        self.movelist_box.selection_clear(0,END) # clear the movelist box selection
+        self.movelist_box.selection_set(self.replaycounter-1) # set the movelist box selection to the proper move
+        self.movelist_box.activate(self.replaycounter-1) # set the movelist box active entry to the proper move
+        self.movelist_box.see(self.movelist_box.size()-1) # see the last
+        self.movelist_box.see(self.movelist_box_top) # make the old top one the top one again
+        self.movelist_box.see(self.replaycounter-1) # scroll to the desired move if it's out of the visible area
+    
     def game_end(self, winner):
         """
         Handles end-of-game actions, including messages, event unbindings,
@@ -2489,24 +2592,12 @@ class Chess(object):
         """
         if self.player.color == "white": # if it's white's turn
             # make all their pawns safe
-            self.white_pawn_1.vulnerable = False
-            self.white_pawn_2.vulnerable = False
-            self.white_pawn_3.vulnerable = False
-            self.white_pawn_4.vulnerable = False
-            self.white_pawn_5.vulnerable = False
-            self.white_pawn_6.vulnerable = False
-            self.white_pawn_7.vulnerable = False
-            self.white_pawn_8.vulnerable = False
+            for p in self.white_pawns:
+                p.vulnerable = False
         else: # if it's black's turn
             # make all their pawns safe
-            self.black_pawn_1.vulnerable = False
-            self.black_pawn_2.vulnerable = False
-            self.black_pawn_3.vulnerable = False
-            self.black_pawn_4.vulnerable = False
-            self.black_pawn_5.vulnerable = False
-            self.black_pawn_6.vulnerable = False
-            self.black_pawn_7.vulnerable = False
-            self.black_pawn_8.vulnerable = False
+            for p in self.black_pawns:
+                p.vulnerable = False
 
     def castle_black_left(self):
         """
@@ -2515,7 +2606,9 @@ class Chess(object):
         if not self.replaying: # only do these things during actual play - not during replays
             self.movelist = self.movelist[:self.replaycounter]
             # write the move in the movelist
+            self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
             self.movelist.append("bl")
+            self.movelist_box.insert(END, cn.chess1_to_iccf_move(self.movelist[-1]))
             self.unsaved_changes = True # note that there are unsaved changes to this game
             self.replaycounter += 1
         self.safe_pawns() # sets the current player's pawns to safe
@@ -2543,6 +2636,7 @@ class Chess(object):
         self.player = self.white_player # other player's turn
         self.check_castles() # refresh the castling buttons
         self.refresh_images() # as well as the piece icons
+        self.refresh_movelist_box() # and the movelist box
         self.status_message.config(text = "Black castled queenside! " + \
         "White's turn.") # announce the event
         if self.audio and not self.replaying: # if audio is on
@@ -2554,8 +2648,10 @@ class Chess(object):
         """
         if not self.replaying: # only do these things during actual play - not during replays
             self.movelist = self.movelist[:self.replaycounter]
+            self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
             # write the move in the movelist
             self.movelist.append("br")
+            self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1]))
             self.unsaved_changes = True # note that there are unsaved changes to this game
             self.replaycounter += 1
         self.safe_pawns() # sets the current player's pawns to safe
@@ -2583,6 +2679,7 @@ class Chess(object):
         self.player = self.white_player # other player's turn
         self.check_castles() # refresh the castling buttons
         self.refresh_images() # as well as the piece icons
+        self.refresh_movelist_box() # and the movelist box
         self.status_message.config(text = "Black castled kingside! " + \
         "White's turn.") # announce the event
         if self.audio and not self.replaying: # if audio is on
@@ -2594,8 +2691,10 @@ class Chess(object):
         """
         if not self.replaying:
             self.movelist = self.movelist[:self.replaycounter]
+            self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
             # write the move in the movelist
             self.movelist.append("wl")
+            self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1]))
             self.unsaved_changes = True # note that there are unsaved changes to this game
             self.replaycounter += 1
         self.safe_pawns() # sets the current player's pawns to safe
@@ -2623,6 +2722,7 @@ class Chess(object):
         self.player = self.black_player # other player's turn
         self.check_castles() # refresh the castling buttons
         self.refresh_images() # as well as the piece icons
+        self.refresh_movelist_box() # and the movelist box
         if self.audio and not self.replaying: # if audio is on
             self.sound_filenames.get("castle.ogg").play() # play 'castle' sound
             delay = 2000 # set a 2000ms delay
@@ -2643,8 +2743,10 @@ class Chess(object):
         # truncate and write the move in the movelist
         if not self.replaying: # only do these things during actual play - not during replays
             self.movelist = self.movelist[:self.replaycounter]
+            self.movelist_box.delete(self.replaycounter, END) # truncate the movelist box
             self.unsaved_changes = True
             self.movelist.append("wr")
+            self.movelist_box.insert(END, cn.chess11_to_iccf_move(self.movelist[-1]))
             self.replaycounter += 1
         
         self.safe_pawns() # sets the current player's pawns to safe
@@ -2672,6 +2774,7 @@ class Chess(object):
         self.player = self.black_player # other player's turn
         self.check_castles() # refresh the castling buttons
         self.refresh_images() # as well as the piece icons
+        self.refresh_movelist_box() # and the movelist box
         if self.audio and not self.replaying: # if audio is on
             self.sound_filenames.get("castle.ogg").play() # play 'castle' sound
             delay = 2000 # set a 2000ms delay
@@ -2825,6 +2928,7 @@ class Chess(object):
         else: # if there are moves,
             self.replaycounter +=1 # increment the replay counter
             self.step_back() # and go 'back' to there
+            
     def audio_from_folder(self, *args):
         """
         Attempts to load audio from a specified folder. If that fails, attempts
