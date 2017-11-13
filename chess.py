@@ -1115,19 +1115,19 @@ class Chess(object):
         self.console_scrollbar.grid(row=0, column=2, sticky='NS')
         self.console_text.grid(row=0, column=0, columnspan=2)
         self.console_text.insert(END,
-        '\n'.join(('# WARNING: READ THE INSTRUCTIONS BEFORE OPERATING THIS CONSOLE.',
-        '# class Move(object):',
-        '#  def __init__(self, game, x, y):',
-        '#   self.x = int((x+0.5) * game.screen_size//8)',
-        '#   self.y = int((y+0.5) * game.screen_size//8)',
-        '# self.click_click(Move(self, 1,7))',
-        '# self.click_click(Move(self, 0,5))',
-        '# The two lines above will select the queenside white knight',
-        '# and move it two spaces forward and one space to the left.',
-        '# self.console_text.config(height=30)',
-        '# The line above will change this text area from 24 lines to 30.\n',
-        '# Click "Run" or press F8 or Control+\\ to run.',
-        '# Right-click in the text field or press Ctrl+F8 or Ctrl+Shift+\\ to run a selection.')))
+        '''# WARNING: READ THE INSTRUCTIONS BEFORE OPERATING THIS CONSOLE.
+        # class Move(object):
+        #  def __init__(self, game, x, y):
+        #   self.x = int((x+0.5) * game.screen_size//8)
+        #   self.y = int((y+0.5) * game.screen_size//8)
+        # self.click_click(Move(self, 1,7))
+        # self.click_click(Move(self, 0,5))
+        # The two lines above will select the queenside white knight
+        # and move it two spaces forward and one space to the left.
+        # self.console_text.config(height=30)
+        # The line above will change this text area from 24 lines to 30.\n
+        # Click "Run" or press F8 or Control+\\ to run.
+        # Right-click in the text field or press Ctrl+F8 or Ctrl+Shift+\\ to run a selection.''')
         self.console_run = Button(self.console_window, text='Run (F8)', command=self.console_execute)
         self.console_run.grid(row=1, column=0, sticky=E)
         self.console_close = Button(self.console_window, text='Close (F4)', command=lambda *x: self.console_window.destroy())
